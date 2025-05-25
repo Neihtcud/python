@@ -1428,4 +1428,422 @@ class ReportPanel extends JPanel {
         sb.append("Dự án đang hoạt động: ").append(activeProjects).append("\n");
         
         long completedProjects = dm.getProjects().size() - activeProjects;
-        sb.append("Dự án đã hoàn thành: ").append(completedProjects
+        // Continuing from the ReportPanel createProjectStatsPanel method
+        sb.append("Dự án đã hoàn thành: ").append(completedProjects).append("\n");
+        
+        textArea.setText(sb.toString());
+        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private JPanel createTaskStatsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Thống kê Công việc"));
+        panel.setBackground(Color.WHITE);
+        
+        JTextArea textArea = new JTextArea();
+        textArea.setEditable(false);
+        textArea.setBackground(Color.WHITE);
+        
+        DataManager dm = DataManager.getInstance();
+        List<Task> allTasks = dm.getProjects().stream()
+                .flatMap(p -> p.getPhases().stream())
+                .flatMap(ph -> ph.getTasks().stream())
+                .toList();
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tổng số công việc: ").append(allTasks.size()).append("\n");
+        
+        long notStarted = allTasks.stream()
+                .filter(t -> t.getStatus() == TaskStatus.CHUA_BAT_DAU)
+                .count();
+        sb.append("Chưa bắt đầu: ").append(notStarted).append("\n");
+        
+        long inProgress = allTasks.stream()
+                .filter(t -> t.getStatus() == TaskStatus.DANG_LAM)
+                .count();
+        sb.append("Đang thực hiện: ").append(inProgress).append("\n");
+        
+        long completed = allTasks.stream()
+                .filter(t -> t.getStatus() == TaskStatus.HOAN_THANH)
+                .count();
+        sb.append("Đã hoàn thành: ").append(completed).append("\n");
+        
+        long overdue = allTasks.stream()
+                .filter(t -> t.getStatus() == TaskStatus.QUA_HAN)
+                .count();
+        sb.append("Quá hạn: ").append(overdue).append("\n");
+        
+        if (allTasks.size() > 0) {
+            double completionRate = (double) completed / allTasks.size() * 100;
+            sb.append("Tỷ lệ hoàn thành: ").append(String.format("%.1f%%", completionRate));
+        }
+        
+        textArea.setText(sb.toString());
+        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private JPanel createUserStatsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Thống kê Nhân sự"));
+        panel.setBackground(Color.WHITE);
+        
+        JTextArea textArea = new JTextArea();
+        textArea.setEditable(false);
+        textArea.setBackground(Color.WHITE);
+        
+        DataManager dm = DataManager.getInstance();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tổng số nhân viên: ").append(dm.getUsers().size()).append("\n");
+        
+        for (UserRole role : UserRole.values()) {
+            long count = dm.getUsers().stream()
+                    .filter(u -> u.getRole() == role)
+                    .count();
+            sb.append(role.getDisplayName()).append(": ").append(count).append("\n");
+        }
+        
+        textArea.setText(sb.toString());
+        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private JPanel createPerformancePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Hiệu suất làm việc"));
+        panel.setBackground(Color.WHITE);
+        
+        JTextArea textArea = new JTextArea();
+        textArea.setEditable(false);
+        textArea.setBackground(Color.WHITE);
+        
+        DataManager dm = DataManager.getInstance();
+        StringBuilder sb = new StringBuilder();
+        
+        // Calculate task assignment distribution
+        Map<String, Long> taskAssignments = dm.getProjects().stream()
+                .flatMap(p -> p.getPhases().stream())
+                .flatMap(ph -> ph.getTasks().stream())
+                .filter(t -> t.getAssignedTo() != null)
+                .collect(Collectors.groupingBy(Task::getAssignedTo, Collectors.counting()));
+        
+        sb.append("Phân bổ công việc theo nhân viên:\n");
+        for (Map.Entry<String, Long> entry : taskAssignments.entrySet()) {
+            User user = dm.getUsers().stream()
+                    .filter(u -> u.getId().equals(entry.getKey()))
+                    .findFirst().orElse(null);
+            if (user != null) {
+                sb.append("- ").append(user.getName()).append(": ")
+                  .append(entry.getValue()).append(" công việc\n");
+            }
+        }
+        
+        // Calculate completion rate by user
+        sb.append("\nTỷ lệ hoàn thành theo nhân viên:\n");
+        for (Map.Entry<String, Long> entry : taskAssignments.entrySet()) {
+            User user = dm.getUsers().stream()
+                    .filter(u -> u.getId().equals(entry.getKey()))
+                    .findFirst().orElse(null);
+            if (user != null) {
+                long completedTasks = dm.getProjects().stream()
+                        .flatMap(p -> p.getPhases().stream())
+                        .flatMap(ph -> ph.getTasks().stream())
+                        .filter(t -> t.getAssignedTo() != null && 
+                                   t.getAssignedTo().equals(entry.getKey()) &&
+                                   t.getStatus() == TaskStatus.HOAN_THANH)
+                        .count();
+                
+                double completionRate = entry.getValue() > 0 ? 
+                        (double) completedTasks / entry.getValue() * 100 : 0;
+                sb.append("- ").append(user.getName()).append(": ")
+                  .append(String.format("%.1f%%", completionRate)).append("\n");
+            }
+        }
+        
+        textArea.setText(sb.toString());
+        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
+        
+        return panel;
+    }
+}
+
+// Additional utility classes and methods
+
+// Task Assignment Dialog (for future enhancement)
+class TaskAssignmentDialog extends JDialog {
+    private Task task;
+    private JComboBox<User> employeeComboBox;
+    private boolean confirmed = false;
+    
+    public TaskAssignmentDialog(Frame parent, Task task) {
+        super(parent, "Phân công công việc", true);
+        this.task = task;
+        initializeUI();
+    }
+    
+    private void initializeUI() {
+        setLayout(new BorderLayout());
+        setSize(400, 200);
+        setLocationRelativeTo(getParent());
+        
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        
+        gbc.gridx = 0; gbc.gridy = 0;
+        contentPanel.add(new JLabel("Công việc:"), gbc);
+        gbc.gridx = 1;
+        contentPanel.add(new JLabel(task.getName()), gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        contentPanel.add(new JLabel("Phân công cho:"), gbc);
+        gbc.gridx = 1;
+        
+        List<User> employees = DataManager.getInstance().getUsersByRole(UserRole.NHAN_VIEN);
+        employees.addAll(DataManager.getInstance().getUsersByRole(UserRole.PHO_PHONG));
+        
+        employeeComboBox = new JComboBox<>(employees.toArray(new User[0]));
+        employeeComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, 
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof User) {
+                    User user = (User) value;
+                    setText(user.getName() + " (" + user.getRole().getDisplayName() + ")");
+                }
+                return this;
+            }
+        });
+        contentPanel.add(employeeComboBox, gbc);
+        
+        add(contentPanel, BorderLayout.CENTER);
+        
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton assignButton = new JButton("Phân công");
+        assignButton.setBackground(new Color(60, 179, 113));
+        assignButton.setForeground(Color.WHITE);
+        assignButton.addActionListener(e -> {
+            User selectedUser = (User) employeeComboBox.getSelectedItem();
+            if (selectedUser != null) {
+                task.setAssignedTo(selectedUser.getId());
+                confirmed = true;
+                dispose();
+            }
+        });
+        
+        JButton cancelButton = new JButton("Hủy");
+        cancelButton.addActionListener(e -> dispose());
+        
+        buttonPanel.add(assignButton);
+        buttonPanel.add(cancelButton);
+        add(buttonPanel, BorderLayout.SOUTH);
+    }
+    
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+}
+
+// Phase Management Dialog (for future enhancement)
+class PhaseDialog extends JDialog {
+    private Project project;
+    private JTextField nameField;
+    private JTextField startDateField, endDateField;
+    private boolean confirmed = false;
+    
+    public PhaseDialog(Frame parent, Project project) {
+        super(parent, "Thêm giai đoạn mới", true);
+        this.project = project;
+        initializeUI();
+    }
+    
+    private void initializeUI() {
+        setLayout(new BorderLayout());
+        setSize(400, 300);
+        setLocationRelativeTo(getParent());
+        
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        // Phase name
+        gbc.gridx = 0; gbc.gridy = 0;
+        formPanel.add(new JLabel("Tên giai đoạn:"), gbc);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        nameField = new JTextField(20);
+        formPanel.add(nameField, gbc);
+        
+        // Start date
+        gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
+        formPanel.add(new JLabel("Ngày bắt đầu (dd/MM/yyyy):"), gbc);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        startDateField = new JTextField(20);
+        formPanel.add(startDateField, gbc);
+        
+        // End date
+        gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
+        formPanel.add(new JLabel("Ngày kết thúc (dd/MM/yyyy):"), gbc);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        endDateField = new JTextField(20);
+        formPanel.add(endDateField, gbc);
+        
+        add(formPanel, BorderLayout.CENTER);
+        
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton saveButton = new JButton("Lưu");
+        saveButton.setBackground(new Color(60, 179, 113));
+        saveButton.setForeground(Color.WHITE);
+        saveButton.addActionListener(this::savePhase);
+        
+        JButton cancelButton = new JButton("Hủy");
+        cancelButton.addActionListener(e -> dispose());
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        add(buttonPanel, BorderLayout.SOUTH);
+    }
+    
+    private void savePhase(ActionEvent e) {
+        try {
+            String name = nameField.getText().trim();
+            if (name.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập tên giai đoạn!");
+                return;
+            }
+            
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDateTime startDate = LocalDateTime.parse(startDateField.getText().trim() + " 00:00", 
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            LocalDateTime endDate = LocalDateTime.parse(endDateField.getText().trim() + " 23:59", 
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            
+            if (endDate.isBefore(startDate)) {
+                JOptionPane.showMessageDialog(this, "Ngày kết thúc phải sau ngày bắt đầu!");
+                return;
+            }
+            
+            String newId = "PH" + (project.getPhases().size() + 1);
+            Phase newPhase = new Phase(newId, name, startDate, endDate);
+            project.getPhases().add(newPhase);
+            
+            confirmed = true;
+            dispose();
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Định dạng ngày không hợp lệ! Vui lòng sử dụng định dạng dd/MM/yyyy");
+        }
+    }
+    
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+}
+
+// Notification System (for future enhancement)
+class NotificationManager {
+    private static NotificationManager instance = new NotificationManager();
+    private List<Notification> notifications = new ArrayList<>();
+    
+    private NotificationManager() {}
+    
+    public static NotificationManager getInstance() {
+        return instance;
+    }
+    
+    public void addNotification(String title, String message, User recipient) {
+        notifications.add(new Notification(title, message, recipient.getId(), LocalDateTime.now()));
+    }
+    
+    public List<Notification> getNotificationsForUser(String userId) {
+        return notifications.stream()
+                .filter(n -> n.getRecipientId().equals(userId))
+                .filter(n -> !n.isRead())
+                .sorted((n1, n2) -> n2.getCreatedAt().compareTo(n1.getCreatedAt()))
+                .toList();
+    }
+    
+    public void markAsRead(String notificationId) {
+        notifications.stream()
+                .filter(n -> n.getId().equals(notificationId))
+                .findFirst()
+                .ifPresent(n -> n.setRead(true));
+    }
+}
+
+class Notification {
+    private String id;
+    private String title;
+    private String message;
+    private String recipientId;
+    private LocalDateTime createdAt;
+    private boolean read;
+    
+    public Notification(String title, String message, String recipientId, LocalDateTime createdAt) {
+        this.id = UUID.randomUUID().toString();
+        this.title = title;
+        this.message = message;
+        this.recipientId = recipientId;
+        this.createdAt = createdAt;
+        this.read = false;
+    }
+    
+    // Getters and setters
+    public String getId() { return id; }
+    public String getTitle() { return title; }
+    public String getMessage() { return message; }
+    public String getRecipientId() { return recipientId; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public boolean isRead() { return read; }
+    public void setRead(boolean read) { this.read = read; }
+}
+
+// File export utilities (for future enhancement)
+class ReportExporter {
+    public static void exportProjectReport(List<Project> projects, String filePath) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
+            writer.println("BÁO CÁO DỰ ÁN");
+            writer.println("================");
+            writer.println("Ngày xuất: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            writer.println();
+            
+            for (Project project : projects) {
+                writer.println("Dự án: " + project.getName());
+                writer.println("ID: " + project.getId());
+                writer.println("Mô tả: " + project.getDescription());
+                writer.println("Ngày bắt đầu: " + project.getStartDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                writer.println("Ngày kết thúc: " + project.getEndDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                writer.println("Số giai đoạn: " + project.getPhases().size());
+                
+                int totalTasks = project.getPhases().stream()
+                        .mapToInt(p -> p.getTasks().size())
+                        .sum();
+                writer.println("Tổng số công việc: " + totalTasks);
+                writer.println("---");
+            }
+            
+            JOptionPane.showMessageDialog(null, "Đã xuất báo cáo thành công: " + filePath);
+            
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi xuất báo cáo: " + e.getMessage());
+        }
+    }
+}
+
+// Main application entry point (already defined above, but included for completeness)
+/*
+public class ProjectManagementSystem extends JFrame {
+    // Main method and application logic already implemented above
+}
+*/
