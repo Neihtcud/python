@@ -1,271 +1,1166 @@
+/*
+ * Hệ Thống Quản Lý Dự Án - Phiên bản có thể nhập dữ liệu
+ * @author Admin
+ */
+
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.List;
+import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-// Model Classes
-class User {
-    private String id;
-    private String name;
-    private String username;
-    private String password;
-    private UserRole role;
-    
-    public User(String id, String name, String username, String password, UserRole role) {
-        this.id = id;
-        this.name = name;
-        this.username = username;
-        this.password = password;
-        this.role = role;
-    }
-    
-    // Getters
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getUsername() { return username; }
-    public String getPassword() { return password; }
-    public UserRole getRole() { return role; }
-}
-
-enum UserRole {
-    GIAM_DOC("Giám đốc"),
-    TRUONG_PHONG("Trưởng phòng"),
-    PHO_PHONG("Phó phòng"),
-    NHAN_VIEN("Nhân viên");
-    
-    private String displayName;
-    
-    UserRole(String displayName) {
-        this.displayName = displayName;
-    }
-    
-    public String getDisplayName() {
-        return displayName;
-    }
-}
-
+// Data classes
 class Project {
-    private String id;
-    private String name;
-    private String description;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    private String managerId;
-    private List<Phase> phases;
+    String id, name, client, startDate, endDate, status, progress;
     
-    public Project(String id, String name, String description, LocalDateTime startDate, LocalDateTime endDate) {
+    public Project(String id, String name, String client, String startDate, String endDate, String status, String progress) {
         this.id = id;
         this.name = name;
-        this.description = description;
+        this.client = client;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.phases = new ArrayList<>();
+        this.status = status;
+        this.progress = progress;
     }
     
-    // Getters and Setters
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public LocalDateTime getStartDate() { return startDate; }
-    public LocalDateTime getEndDate() { return endDate; }
-    public String getManagerId() { return managerId; }
-    public void setManagerId(String managerId) { this.managerId = managerId; }
-    public List<Phase> getPhases() { return phases; }
-}
-
-class Phase {
-    private String id;
-    private String name;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    private List<Task> tasks;
-    
-    public Phase(String id, String name, LocalDateTime startDate, LocalDateTime endDate) {
-        this.id = id;
-        this.name = name;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.tasks = new ArrayList<>();
+    public Object[] toArray() {
+        return new Object[]{id, name, client, startDate, endDate, status, progress};
     }
-    
-    // Getters
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public LocalDateTime getStartDate() { return startDate; }
-    public LocalDateTime getEndDate() { return endDate; }
-    public List<Task> getTasks() { return tasks; }
 }
 
 class Task {
-    private String id;
-    private String name;
-    private String description;
-    private String assignedTo;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    private TaskStatus status;
+    String id, name, project, assignee, priority, dueDate, status;
     
-    public Task(String id, String name, String description, LocalDateTime startDate, LocalDateTime endDate) {
+    public Task(String id, String name, String project, String assignee, String priority, String dueDate, String status) {
         this.id = id;
         this.name = name;
-        this.description = description;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.status = TaskStatus.CHUA_BAT_DAU;
+        this.project = project;
+        this.assignee = assignee;
+        this.priority = priority;
+        this.dueDate = dueDate;
+        this.status = status;
     }
     
-    // Getters and Setters
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public String getAssignedTo() { return assignedTo; }
-    public void setAssignedTo(String assignedTo) { this.assignedTo = assignedTo; }
-    public LocalDateTime getStartDate() { return startDate; }
-    public LocalDateTime getEndDate() { return endDate; }
-    public TaskStatus getStatus() { return status; }
-    public void setStatus(TaskStatus status) { this.status = status; }
-}
-
-enum TaskStatus {
-    CHUA_BAT_DAU("Chưa bắt đầu"),
-    DANG_LAM("Đang làm"),
-    HOAN_THANH("Hoàn thành"),
-    QUA_HAN("Quá hạn");
-    
-    private String displayName;
-    
-    TaskStatus(String displayName) {
-        this.displayName = displayName;
-    }
-    
-    public String getDisplayName() {
-        return displayName;
+    public Object[] toArray() {
+        return new Object[]{id, name, project, assignee, priority, dueDate, status};
     }
 }
 
-// Data Manager
-class DataManager {
-    private static DataManager instance = new DataManager();
-    private List<User> users;
-    private List<Project> projects;
-    private User currentUser;
+class Employee {
+    String id, name, position, email, phone, department, status;
     
-    private DataManager() {
-        users = new ArrayList<>();
-        projects = new ArrayList<>();
-        initializeData();
+    public Employee(String id, String name, String position, String email, String phone, String department, String status) {
+        this.id = id;
+        this.name = name;
+        this.position = position;
+        this.email = email;
+        this.phone = phone;
+        this.department = department;
+        this.status = status;
     }
     
-    public static DataManager getInstance() {
-        return instance;
-    }
-    
-    private void initializeData() {
-        // Sample users
-        users.add(new User("1", "Nguyễn Văn An", "admin", "admin", UserRole.GIAM_DOC));
-        users.add(new User("2", "Trần Thị Bình", "manager1", "123", UserRole.TRUONG_PHONG));
-        users.add(new User("3", "Lê Văn Cường", "deputy1", "123", UserRole.PHO_PHONG));
-        users.add(new User("4", "Phạm Thị Dung", "employee1", "123", UserRole.NHAN_VIEN));
-        users.add(new User("5", "Hoàng Văn Em", "employee2", "123", UserRole.NHAN_VIEN));
-        
-        // Sample projects
-        Project project1 = new Project("P1", "Hệ thống ERP", "Phát triển hệ thống quản lý tài nguyên doanh nghiệp", 
-                                     LocalDateTime.now(), LocalDateTime.now().plusMonths(6));
-        project1.setManagerId("2");
-        
-        Phase phase1 = new Phase("PH1", "Phân tích yêu cầu", LocalDateTime.now(), LocalDateTime.now().plusWeeks(2));
-        Task task1 = new Task("T1", "Thu thập yêu cầu", "Thu thập và phân tích yêu cầu từ người dùng", 
-                            LocalDateTime.now(), LocalDateTime.now().plusWeeks(1));
-        task1.setAssignedTo("4");
-        phase1.getTasks().add(task1);
-        
-        project1.getPhases().add(phase1);
-        projects.add(project1);
-    }
-    
-    public User authenticate(String username, String password) {
-        return users.stream()
-                .filter(u -> u.getUsername().equals(username) && u.getPassword().equals(password))
-                .findFirst()
-                .orElse(null);
-    }
-    
-    public boolean registerUser(String name, String username, String password, UserRole role) {
-        if (users.stream().anyMatch(u -> u.getUsername().equals(username))) {
-            return false; // Username already exists
-        }
-        users.add(new User(String.valueOf(users.size() + 1), name, username, password, role));
-        return true;
-    }
-    
-    // Getters
-    public List<User> getUsers() { return users; }
-    public List<Project> getProjects() { return projects; }
-    public User getCurrentUser() { return currentUser; }
-    public void setCurrentUser(User user) { this.currentUser = user; }
-    
-    public List<User> getUsersByRole(UserRole role) {
-        return users.stream().filter(u -> u.getRole() == role).toList();
-    }
-    
-    public void addProject(Project project) {
-        projects.add(project);
+    public Object[] toArray() {
+        return new Object[]{id, name, position, email, phone, department, status};
     }
 }
 
-// Main Application
-public class ProjectManagementSystem extends JFrame {
-    private CardLayout cardLayout;
-    private JPanel mainPanel;
-    private DataManager dataManager;
+// Main Dashboard Panel
+public class MainDashboard extends JFrame {
+    private JPanel sidebarPanel;
+    private JPanel contentPanel;
+    private CardLayout contentLayout;
+    private JLabel userLabel;
+    private String currentUser = "Admin";
     
-    public ProjectManagementSystem() {
-        dataManager = DataManager.getInstance();
-        initializeUI();
-        showLoginPanel();
-    }
+    // Data storage
+    private ArrayList<Project> projects = new ArrayList<>();
+    private ArrayList<Task> tasks = new ArrayList<>();
+    private ArrayList<Employee> employees = new ArrayList<>();
     
-    private void initializeUI() {
-        setTitle("Hệ thống Quản lý Dự án");
+    // Table models
+    private DefaultTableModel projectTableModel;
+    private DefaultTableModel taskTableModel;
+    private DefaultTableModel employeeTableModel;
+    
+    // ID counters
+    private int projectIdCounter = 1;
+    private int taskIdCounter = 1;
+    private int employeeIdCounter = 1;
+    
+    public MainDashboard() {
+        initializeComponents();
+        setupLayout();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 800);
-        setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setTitle("Hệ Thống Quản Lý Dự Án");
+        setVisible(true);
+    }
+    
+    private void initializeComponents() {
+        createSidebar();
+        createContentPanel();
+    }
+    
+    private void createSidebar() {
+        sidebarPanel = new JPanel();
+        sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
+        sidebarPanel.setBackground(new Color(52, 73, 94));
+        sidebarPanel.setPreferredSize(new Dimension(250, 0));
         
-        cardLayout = new CardLayout();
-        mainPanel = new JPanel(cardLayout);
+        // Header
+        JPanel headerPanel = new JPanel();
+        headerPanel.setBackground(new Color(44, 62, 80));
+        headerPanel.setMaximumSize(new Dimension(250, 80));
+        headerPanel.setLayout(new BorderLayout());
         
-        add(mainPanel);
+        JLabel titleLabel = new JLabel("QUẢN LÝ DỰ ÁN");
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        headerPanel.add(titleLabel, BorderLayout.CENTER);
+        
+        // User info
+        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        userPanel.setBackground(new Color(52, 73, 94));
+        userPanel.setMaximumSize(new Dimension(250, 40));
+        
+        userLabel = new JLabel("👤 " + currentUser);
+        userLabel.setForeground(Color.WHITE);
+        userLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        userPanel.add(userLabel);
+        
+        // Menu items
+        sidebarPanel.add(headerPanel);
+        sidebarPanel.add(userPanel);
+        sidebarPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        
+        // Navigation buttons
+        addMenuButton("🏠 Trang Chủ", "HOME");
+        addMenuButton("📋 Quản Lý Dự Án", "PROJECTS");
+        addMenuButton("✅ Công Việc", "TASKS");
+        addMenuButton("👥 Nhân Viên", "EMPLOYEES");
+        addMenuButton("📊 Báo Cáo", "REPORTS");
+        addMenuButton("📈 Thống Kê", "STATISTICS");
+        addMenuButton("⚙️ Cài Đặt", "SETTINGS");
+        
+        sidebarPanel.add(Box.createVerticalGlue());
+        
+        // Logout button
+        JButton logoutBtn = new JButton("🚪 Đăng Xuất");
+        logoutBtn.setBackground(new Color(231, 76, 60));
+        logoutBtn.setForeground(Color.WHITE);
+        logoutBtn.setBorder(new EmptyBorder(10, 20, 10, 20));
+        logoutBtn.setMaximumSize(new Dimension(220, 40));
+        logoutBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        logoutBtn.addActionListener(e -> System.exit(0));
+        sidebarPanel.add(logoutBtn);
+        sidebarPanel.add(Box.createRigidArea(new Dimension(0, 20)));
     }
     
-    private void showLoginPanel() {
-        LoginPanel loginPanel = new LoginPanel(this);
-        mainPanel.add(loginPanel, "LOGIN");
-        cardLayout.show(mainPanel, "LOGIN");
+    private void addMenuButton(String text, String panelName) {
+        JButton button = new JButton(text);
+        button.setBackground(new Color(52, 73, 94));
+        button.setForeground(Color.WHITE);
+        button.setBorder(new EmptyBorder(12, 20, 12, 20));
+        button.setMaximumSize(new Dimension(230, 45));
+        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(41, 128, 185));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(52, 73, 94));
+            }
+        });
+        
+        button.addActionListener(e -> {
+            contentLayout.show(contentPanel, panelName);
+            updateSelectedButton(button);
+        });
+        
+        sidebarPanel.add(button);
+        sidebarPanel.add(Box.createRigidArea(new Dimension(0, 5)));
     }
     
-    public void showRegisterPanel() {
-        RegisterPanel registerPanel = new RegisterPanel(this);
-        mainPanel.add(registerPanel, "REGISTER");
-        cardLayout.show(mainPanel, "REGISTER");
+    private void updateSelectedButton(JButton selectedButton) {
+        for (Component comp : sidebarPanel.getComponents()) {
+            if (comp instanceof JButton && !comp.equals(sidebarPanel.getComponent(sidebarPanel.getComponentCount()-2))) {
+                comp.setBackground(new Color(52, 73, 94));
+            }
+        }
+        selectedButton.setBackground(new Color(41, 128, 185));
     }
     
-    public void showDashboard(User user) {
-        dataManager.setCurrentUser(user);
-        DashboardPanel dashboard = new DashboardPanel(this, user);
-        mainPanel.add(dashboard, "DASHBOARD");
-        cardLayout.show(mainPanel, "DASHBOARD");
+    private void createContentPanel() {
+        contentLayout = new CardLayout();
+        contentPanel = new JPanel(contentLayout);
+        
+        contentPanel.add(createHomePanel(), "HOME");
+        contentPanel.add(createProjectsPanel(), "PROJECTS");
+        contentPanel.add(createTasksPanel(), "TASKS");
+        contentPanel.add(createEmployeesPanel(), "EMPLOYEES");
+        contentPanel.add(createReportsPanel(), "REPORTS");
+        contentPanel.add(createStatisticsPanel(), "STATISTICS");
+        contentPanel.add(createSettingsPanel(), "SETTINGS");
+        
+        contentLayout.show(contentPanel, "HOME");
     }
     
-    public void logout() {
-        dataManager.setCurrentUser(null);
-        mainPanel.removeAll();
-        showLoginPanel();
+    private JPanel createHomePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        
+        // Header
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(236, 240, 241));
+        headerPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
+        
+        JLabel titleLabel = new JLabel("Dashboard - Tổng Quan Hệ Thống");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setForeground(new Color(52, 73, 94));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        JLabel dateLabel = new JLabel(new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()));
+        dateLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        dateLabel.setForeground(Color.GRAY);
+        headerPanel.add(dateLabel, BorderLayout.EAST);
+        
+        // Statistics cards
+        JPanel statsPanel = new JPanel(new GridLayout(1, 4, 20, 0));
+        statsPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        statsPanel.setBackground(Color.WHITE);
+        
+        statsPanel.add(createStatCard("📋 Tổng Dự Án", String.valueOf(projects.size()), new Color(52, 152, 219)));
+        statsPanel.add(createStatCard("✅ Công Việc", String.valueOf(tasks.size()), new Color(46, 204, 113)));
+        statsPanel.add(createStatCard("👥 Nhân Viên", String.valueOf(employees.size()), new Color(155, 89, 182)));
+        
+        // Count overdue tasks
+        int overdueTasks = 0;
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        Date today = new Date();
+        for (Task task : tasks) {
+            try {
+                Date dueDate = sdf.parse(task.dueDate);
+                if (dueDate.before(today) && !task.status.equals("Hoàn thành")) {
+                    overdueTasks++;
+                }
+            } catch (Exception e) {
+                // Ignore parsing error
+            }
+        }
+        statsPanel.add(createStatCard("⏰ Quá Hạn", String.valueOf(overdueTasks), new Color(231, 76, 60)));
+        
+        // Recent activities placeholder
+        JPanel recentPanel = new JPanel(new BorderLayout());
+        recentPanel.setBorder(BorderFactory.createTitledBorder("Hoạt Động Gần Đây"));
+        recentPanel.setBackground(Color.WHITE);
+        
+        JLabel noActivityLabel = new JLabel("Chưa có hoạt động nào", SwingConstants.CENTER);
+        noActivityLabel.setFont(new Font("Arial", Font.ITALIC, 14));
+        noActivityLabel.setForeground(Color.GRAY);
+        noActivityLabel.setBorder(new EmptyBorder(50, 0, 50, 0));
+        recentPanel.add(noActivityLabel, BorderLayout.CENTER);
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+        
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(statsPanel, BorderLayout.NORTH);
+        centerPanel.add(recentPanel, BorderLayout.CENTER);
+        panel.add(centerPanel, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private JPanel createStatCard(String title, String value, Color color) {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(color);
+        card.setBorder(new EmptyBorder(20, 20, 20, 20));
+        
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel valueLabel = new JLabel(value);
+        valueLabel.setForeground(Color.WHITE);
+        valueLabel.setFont(new Font("Arial", Font.BOLD, 32));
+        valueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        card.add(titleLabel);
+        card.add(Box.createRigidArea(new Dimension(0, 10)));
+        card.add(valueLabel);
+        
+        return card;
+    }
+    
+    private JPanel createProjectsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        
+        // Header with toolbar
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        headerPanel.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel("Quản Lý Dự Án");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        
+        JButton addProjectBtn = new JButton("+ Thêm Dự Án");
+        addProjectBtn.setBackground(new Color(46, 204, 113));
+        addProjectBtn.setForeground(Color.WHITE);
+        addProjectBtn.setBorder(new EmptyBorder(8, 15, 8, 15));
+        addProjectBtn.setFocusPainted(false);
+        addProjectBtn.addActionListener(e -> showAddProjectDialog());
+        
+        JButton editBtn = new JButton("✏️ Sửa");
+        editBtn.setBackground(new Color(52, 152, 219));
+        editBtn.setForeground(Color.WHITE);
+        editBtn.setBorder(new EmptyBorder(8, 15, 8, 15));
+        editBtn.setFocusPainted(false);
+        
+        JButton deleteBtn = new JButton("🗑️ Xóa");
+        deleteBtn.setBackground(new Color(231, 76, 60));
+        deleteBtn.setForeground(Color.WHITE);
+        deleteBtn.setBorder(new EmptyBorder(8, 15, 8, 15));
+        deleteBtn.setFocusPainted(false);
+        
+        buttonPanel.add(addProjectBtn);
+        buttonPanel.add(editBtn);
+        buttonPanel.add(deleteBtn);
+        headerPanel.add(buttonPanel, BorderLayout.EAST);
+        
+        // Projects table
+        String[] columns = {"ID", "Tên Dự Án", "Khách Hàng", "Ngày Bắt Đầu", "Ngày Kết Thúc", "Trạng Thái", "Tiến Độ (%)"};
+        projectTableModel = new DefaultTableModel(columns, 0);
+        
+        JTable projectTable = new JTable(projectTableModel);
+        projectTable.setRowHeight(35);
+        projectTable.getTableHeader().setBackground(new Color(52, 73, 94));
+        projectTable.getTableHeader().setForeground(Color.WHITE);
+        projectTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        
+        JScrollPane scrollPane = new JScrollPane(projectTable);
+        scrollPane.setBorder(new EmptyBorder(0, 20, 20, 20));
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private void showAddProjectDialog() {
+        JDialog dialog = new JDialog(this, "Thêm Dự Án Mới", true);
+        dialog.setSize(500, 400);
+        dialog.setLocationRelativeTo(this);
+        
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        // Form fields
+        JTextField nameField = new JTextField(20);
+        JTextField clientField = new JTextField(20);
+        JTextField startDateField = new JTextField(20);
+        JTextField endDateField = new JTextField(20);
+        JComboBox<String> statusCombo = new JComboBox<>(new String[]{"Mới tạo", "Đang thực hiện", "Tạm dừng", "Hoàn thành"});
+        JTextField progressField = new JTextField(20);
+        
+        // Add components
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Tên Dự Án:"), gbc);
+        gbc.gridx = 1;
+        panel.add(nameField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Khách Hàng:"), gbc);
+        gbc.gridx = 1;
+        panel.add(clientField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 2;
+        panel.add(new JLabel("Ngày Bắt Đầu (dd/MM/yyyy):"), gbc);
+        gbc.gridx = 1;
+        panel.add(startDateField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 3;
+        panel.add(new JLabel("Ngày Kết Thúc (dd/MM/yyyy):"), gbc);
+        gbc.gridx = 1;
+        panel.add(endDateField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 4;
+        panel.add(new JLabel("Trạng Thái:"), gbc);
+        gbc.gridx = 1;
+        panel.add(statusCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 5;
+        panel.add(new JLabel("Tiến Độ (%):"), gbc);
+        gbc.gridx = 1;
+        panel.add(progressField, gbc);
+        
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton saveBtn = new JButton("Lưu");
+        JButton cancelBtn = new JButton("Hủy");
+        
+        saveBtn.addActionListener(e -> {
+            try {
+                String id = "P" + String.format("%03d", projectIdCounter++);
+                String name = nameField.getText().trim();
+                String client = clientField.getText().trim();
+                String startDate = startDateField.getText().trim();
+                String endDate = endDateField.getText().trim();
+                String status = (String) statusCombo.getSelectedItem();
+                String progress = progressField.getText().trim() + "%";
+                
+                if (name.isEmpty() || client.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                Project project = new Project(id, name, client, startDate, endDate, status, progress);
+                projects.add(project);
+                projectTableModel.addRow(project.toArray());
+                
+                dialog.dispose();
+                JOptionPane.showMessageDialog(this, "Thêm dự án thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                
+                // Refresh home panel
+                refreshHomePanel();
+                
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Có lỗi xảy ra: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveBtn);
+        buttonPanel.add(cancelBtn);
+        
+        gbc.gridx = 0; gbc.gridy = 6;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(buttonPanel, gbc);
+        
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    private JPanel createTasksPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        
+        // Header
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        headerPanel.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel("Quản Lý Công Việc");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        
+        JButton addTaskBtn = new JButton("+ Thêm Công Việc");
+        addTaskBtn.setBackground(new Color(46, 204, 113));
+        addTaskBtn.setForeground(Color.WHITE);
+        addTaskBtn.setBorder(new EmptyBorder(8, 15, 8, 15));
+        addTaskBtn.setFocusPainted(false);
+        addTaskBtn.addActionListener(e -> showAddTaskDialog());
+        
+        buttonPanel.add(addTaskBtn);
+        headerPanel.add(buttonPanel, BorderLayout.EAST);
+        
+        // Tasks table
+        String[] columns = {"ID", "Tên Công Việc", "Dự Án", "Người Thực Hiện", "Độ Ưu Tiên", "Ngày Hết Hạn", "Trạng Thái"};
+        taskTableModel = new DefaultTableModel(columns, 0);
+        
+        JTable taskTable = new JTable(taskTableModel);
+        taskTable.setRowHeight(35);
+        taskTable.getTableHeader().setBackground(new Color(52, 73, 94));
+        taskTable.getTableHeader().setForeground(Color.WHITE);
+        taskTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        
+        JScrollPane scrollPane = new JScrollPane(taskTable);
+        scrollPane.setBorder(new EmptyBorder(0, 20, 20, 20));
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private void showAddTaskDialog() {
+        JDialog dialog = new JDialog(this, "Thêm Công Việc Mới", true);
+        dialog.setSize(500, 450);
+        dialog.setLocationRelativeTo(this);
+        
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        // Form fields
+        JTextField nameField = new JTextField(20);
+        JComboBox<String> projectCombo = new JComboBox<>();
+        for (Project p : projects) {
+            projectCombo.addItem(p.name);
+        }
+        
+        JComboBox<String> assigneeCombo = new JComboBox<>();
+        for (Employee e : employees) {
+            assigneeCombo.addItem(e.name);
+        }
+        
+        JComboBox<String> priorityCombo = new JComboBox<>(new String[]{"Thấp", "Trung bình", "Cao", "Rất cao"});
+        JTextField dueDateField = new JTextField(20);
+        JComboBox<String> statusCombo = new JComboBox<>(new String[]{"Chưa bắt đầu", "Đang thực hiện", "Hoàn thành"});
+        
+        // Add components
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Tên Công Việc:"), gbc);
+        gbc.gridx = 1;
+        panel.add(nameField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Dự Án:"), gbc);
+        gbc.gridx = 1;
+        panel.add(projectCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 2;
+        panel.add(new JLabel("Người Thực Hiện:"), gbc);
+        gbc.gridx = 1;
+        panel.add(assigneeCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 3;
+        panel.add(new JLabel("Độ Ưu Tiên:"), gbc);
+        gbc.gridx = 1;
+        panel.add(priorityCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 4;
+        panel.add(new JLabel("Ngày Hết Hạn (dd/MM/yyyy):"), gbc);
+        gbc.gridx = 1;
+        panel.add(dueDateField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 5;
+        panel.add(new JLabel("Trạng Thái:"), gbc);
+        gbc.gridx = 1;
+        panel.add(statusCombo, gbc);
+        
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton saveBtn = new JButton("Lưu");
+        JButton cancelBtn = new JButton("Hủy");
+        
+        saveBtn.addActionListener(e -> {
+            try {
+                String id = "T" + String.format("%03d", taskIdCounter++);
+                String name = nameField.getText().trim();
+                String project = (String) projectCombo.getSelectedItem();
+                String assignee = (String) assigneeCombo.getSelectedItem();
+                String priority = (String) priorityCombo.getSelectedItem();
+                String dueDate = dueDateField.getText().trim();
+                String status = (String) statusCombo.getSelectedItem();
+                
+                if (name.isEmpty() || dueDate.isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                Task task = new Task(id, name, project, assignee, priority, dueDate, status);
+                tasks.add(task);
+                taskTableModel.addRow(task.toArray());
+                
+                dialog.dispose();
+                JOptionPane.showMessageDialog(this, "Thêm công việc thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                
+                refreshHomePanel();
+                
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Có lỗi xảy ra: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveBtn);
+        buttonPanel.add(cancelBtn);
+        
+        gbc.gridx = 0; gbc.gridy = 6;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(buttonPanel, gbc);
+        
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    private JPanel createEmployeesPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        
+        // Header
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        headerPanel.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel("Quản Lý Nhân Viên");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        
+        JButton addEmployeeBtn = new JButton("+ Thêm Nhân Viên");
+        addEmployeeBtn.setBackground(new Color(46, 204, 113));
+        addEmployeeBtn.setForeground(Color.WHITE);
+        addEmployeeBtn.setBorder(new EmptyBorder(8, 15, 8, 15));
+        addEmployeeBtn.setFocusPainted(false);
+        addEmployeeBtn.addActionListener(e -> showAddEmployeeDialog());
+        
+        buttonPanel.add(addEmployeeBtn);
+        headerPanel.add(buttonPanel, BorderLayout.EAST);
+        
+        // Employees table
+        String[] columns = {"ID", "Họ Tên", "Chức Vụ", "Email", "Điện Thoại", "Phòng Ban", "Trạng Thái"};
+        employeeTableModel = new DefaultTableModel(columns, 0);
+        
+        JTable employeeTable = new JTable(employeeTableModel);
+        employeeTable.setRowHeight(35);
+        employeeTable.getTableHeader().setBackground(new Color(52, 73, 94));
+        employeeTable.getTableHeader().setForeground(Color.WHITE);
+        employeeTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        
+        JScrollPane scrollPane = new JScrollPane(employeeTable);
+        scrollPane.setBorder(new EmptyBorder(0, 20, 20, 20));
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private void showAddEmployeeDialog() {
+        JDialog dialog = new JDialog(this, "Thêm Nhân Viên Mới", true);
+        dialog.setSize(500, 500);
+        dialog.setLocationRelativeTo(this);
+        
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        // Form fields
+        JTextField nameField = new JTextField(20);
+        JTextField positionField = new JTextField(20);
+        JTextField emailField = new JTextField(20);
+        JTextField phoneField = new JTextField(20);
+        JComboBox<String> departmentCombo = new JComboBox<>(new String[]{"IT", "Marketing", "Tài chính", "Nhân sự", "Kinh doanh", "Vận hành"});
+        JComboBox<String> statusCombo = new JComboBox<>(new String[]{"Đang làm việc", "Nghỉ phép", "Nghỉ việc"});
+        
+        // Add components
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Họ Tên:"), gbc);
+        gbc.gridx = 1;
+        panel.add(nameField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Chức Vụ:"), gbc);
+        gbc.gridx = 1;
+        panel.add(positionField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 2;
+        panel.add(new JLabel("Email:"), gbc);
+        gbc.gridx = 1;
+        panel.add(emailField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 3;
+        panel.add(new JLabel("Điện Thoại:"), gbc);
+        gbc.gridx = 1;
+        panel.add(phoneField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 4;
+        panel.add(new JLabel("Phòng Ban:"), gbc);
+        gbc.gridx = 1;
+        panel.add(departmentCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 5;
+        panel.add(new JLabel("Trạng Thái:"), gbc);
+        gbc.gridx = 1;
+        panel.add(statusCombo, gbc);
+        
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton saveBtn = new JButton("Lưu");
+        JButton cancelBtn = new JButton("Hủy");
+        
+        saveBtn.addActionListener(e -> {
+            try {
+                String id = "E" + String.format("%03d", employeeIdCounter++);
+                String name = nameField.getText().trim();
+                String position = positionField.getText().trim();
+                String email = emailField.getText().trim();
+                String phone = phoneField.getText().trim();
+                String department = (String) departmentCombo.getSelectedItem();
+                String status = (String) statusCombo.getSelectedItem();
+                
+                if (name.isEmpty() || position.isEmpty() || email.isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin bắt buộc!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                Employee employee = new Employee(id, name, position, email, phone, department, status);
+                employees.add(employee);
+                employeeTableModel.addRow(employee.toArray());
+                
+                dialog.dispose();
+                JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                
+                refreshHomePanel();
+                
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Có lỗi xảy ra: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveBtn);
+        buttonPanel.add(cancelBtn);
+        
+        gbc.gridx = 0; gbc.gridy = 6;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(buttonPanel, gbc);
+        
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    private JPanel createReportsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        headerPanel.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel("Báo Cáo Hệ Thống");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        // Report content
+        JPanel contentPanel = new JPanel(new GridLayout(2, 2, 20, 20));
+        contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        contentPanel.setBackground(Color.WHITE);
+        
+        // Project Status Report
+        JPanel projectReportPanel = new JPanel(new BorderLayout());
+        projectReportPanel.setBorder(BorderFactory.createTitledBorder("Báo Cáo Trạng Thái Dự Án"));
+        projectReportPanel.setBackground(Color.WHITE);
+        
+        JTextArea projectReport = new JTextArea();
+        projectReport.setEditable(false);
+        projectReport.setBackground(new Color(248, 249, 250));
+        projectReport.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        StringBuilder projectReportText = new StringBuilder();
+        projectReportText.append("TỔNG QUAN DỰ ÁN:\n");
+        projectReportText.append("- Tổng số dự án: ").append(projects.size()).append("\n");
+        
+        int newProjects = 0, inProgressProjects = 0, pausedProjects = 0, completedProjects = 0;
+        for (Project p : projects) {
+            switch (p.status) {
+                case "Mới tạo": newProjects++; break;
+                case "Đang thực hiện": inProgressProjects++; break;
+                case "Tạm dừng": pausedProjects++; break;
+                case "Hoàn thành": completedProjects++; break;
+            }
+        }
+        
+        projectReportText.append("- Dự án mới: ").append(newProjects).append("\n");
+        projectReportText.append("- Đang thực hiện: ").append(inProgressProjects).append("\n");
+        projectReportText.append("- Tạm dừng: ").append(pausedProjects).append("\n");
+        projectReportText.append("- Hoàn thành: ").append(completedProjects).append("\n");
+        
+        projectReport.setText(projectReportText.toString());
+        projectReportPanel.add(new JScrollPane(projectReport), BorderLayout.CENTER);
+        
+        // Task Status Report
+        JPanel taskReportPanel = new JPanel(new BorderLayout());
+        taskReportPanel.setBorder(BorderFactory.createTitledBorder("Báo Cáo Công Việc"));
+        taskReportPanel.setBackground(Color.WHITE);
+        
+        JTextArea taskReport = new JTextArea();
+        taskReport.setEditable(false);
+        taskReport.setBackground(new Color(248, 249, 250));
+        taskReport.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        StringBuilder taskReportText = new StringBuilder();
+        taskReportText.append("TỔNG QUAN CÔNG VIỆC:\n");
+        taskReportText.append("- Tổng số công việc: ").append(tasks.size()).append("\n");
+        
+        int notStartedTasks = 0, inProgressTasks = 0, completedTasks = 0;
+        for (Task t : tasks) {
+            switch (t.status) {
+                case "Chưa bắt đầu": notStartedTasks++; break;
+                case "Đang thực hiện": inProgressTasks++; break;
+                case "Hoàn thành": completedTasks++; break;
+            }
+        }
+        
+        taskReportText.append("- Chưa bắt đầu: ").append(notStartedTasks).append("\n");
+        taskReportText.append("- Đang thực hiện: ").append(inProgressTasks).append("\n");
+        taskReportText.append("- Hoàn thành: ").append(completedTasks).append("\n");
+        
+        taskReport.setText(taskReportText.toString());
+        taskReportPanel.add(new JScrollPane(taskReport), BorderLayout.CENTER);
+        
+        // Employee Report
+        JPanel employeeReportPanel = new JPanel(new BorderLayout());
+        employeeReportPanel.setBorder(BorderFactory.createTitledBorder("Báo Cáo Nhân Viên"));
+        employeeReportPanel.setBackground(Color.WHITE);
+        
+        JTextArea employeeReport = new JTextArea();
+        employeeReport.setEditable(false);
+        employeeReport.setBackground(new Color(248, 249, 250));
+        employeeReport.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        StringBuilder employeeReportText = new StringBuilder();
+        employeeReportText.append("TỔNG QUAN NHÂN VIÊN:\n");
+        employeeReportText.append("- Tổng số nhân viên: ").append(employees.size()).append("\n");
+        
+        int activeEmployees = 0, onLeaveEmployees = 0, inactiveEmployees = 0;
+        for (Employee emp : employees) {
+            switch (emp.status) {
+                case "Đang làm việc": activeEmployees++; break;
+                case "Nghỉ phép": onLeaveEmployees++; break;
+                case "Nghỉ việc": inactiveEmployees++; break;
+            }
+        }
+        
+        employeeReportText.append("- Đang làm việc: ").append(activeEmployees).append("\n");
+        employeeReportText.append("- Nghỉ phép: ").append(onLeaveEmployees).append("\n");
+        employeeReportText.append("- Nghỉ việc: ").append(inactiveEmployees).append("\n");
+        
+        employeeReport.setText(employeeReportText.toString());
+        employeeReportPanel.add(new JScrollPane(employeeReport), BorderLayout.CENTER);
+        
+        // Export Button Panel
+        JPanel exportPanel = new JPanel(new FlowLayout());
+        exportPanel.setBackground(Color.WHITE);
+        
+        JButton exportBtn = new JButton("📄 Xuất Báo Cáo");
+        exportBtn.setBackground(new Color(52, 152, 219));
+        exportBtn.setForeground(Color.WHITE);
+        exportBtn.setBorder(new EmptyBorder(10, 20, 10, 20));
+        exportBtn.setFocusPainted(false);
+        exportBtn.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "Chức năng xuất báo cáo sẽ được phát triển trong phiên bản tiếp theo!", 
+                                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        });
+        
+        exportPanel.add(exportBtn);
+        
+        contentPanel.add(projectReportPanel);
+        contentPanel.add(taskReportPanel);
+        contentPanel.add(employeeReportPanel);
+        contentPanel.add(exportPanel);
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(contentPanel, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private JPanel createStatisticsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        headerPanel.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel("Thống Kê Hệ Thống");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        // Statistics content
+        JPanel statsPanel = new JPanel(new GridLayout(3, 1, 0, 20));
+        statsPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        statsPanel.setBackground(Color.WHITE);
+        
+        // Project Statistics
+        JPanel projectStatsPanel = new JPanel(new BorderLayout());
+        projectStatsPanel.setBorder(BorderFactory.createTitledBorder("Thống Kê Dự Án"));
+        projectStatsPanel.setBackground(Color.WHITE);
+        
+        JPanel projectStatsGrid = new JPanel(new GridLayout(2, 2, 10, 10));
+        projectStatsGrid.setBackground(Color.WHITE);
+        projectStatsGrid.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        // Calculate project completion rate
+        int totalProjects = projects.size();
+        int completedProjects = 0;
+        for (Project p : projects) {
+            if ("Hoàn thành".equals(p.status)) {
+                completedProjects++;
+            }
+        }
+        double completionRate = totalProjects > 0 ? (double) completedProjects / totalProjects * 100 : 0;
+        
+        projectStatsGrid.add(createStatLabel("Tổng dự án:", String.valueOf(totalProjects)));
+        projectStatsGrid.add(createStatLabel("Đã hoàn thành:", String.valueOf(completedProjects)));
+        projectStatsGrid.add(createStatLabel("Tỷ lệ hoàn thành:", String.format("%.1f%%", completionRate)));
+        projectStatsGrid.add(createStatLabel("Đang thực hiện:", String.valueOf(totalProjects - completedProjects)));
+        
+        projectStatsPanel.add(projectStatsGrid, BorderLayout.CENTER);
+        
+        // Task Statistics
+        JPanel taskStatsPanel = new JPanel(new BorderLayout());
+        taskStatsPanel.setBorder(BorderFactory.createTitledBorder("Thống Kê Công Việc"));
+        taskStatsPanel.setBackground(Color.WHITE);
+        
+        JPanel taskStatsGrid = new JPanel(new GridLayout(2, 2, 10, 10));
+        taskStatsGrid.setBackground(Color.WHITE);
+        taskStatsGrid.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        int totalTasks = tasks.size();
+        int completedTasks = 0;
+        int overdueTasks = 0;
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        Date today = new Date();
+        
+        for (Task t : tasks) {
+            if ("Hoàn thành".equals(t.status)) {
+                completedTasks++;
+            }
+            try {
+                Date dueDate = sdf.parse(t.dueDate);
+                if (dueDate.before(today) && !"Hoàn thành".equals(t.status)) {
+                    overdueTasks++;
+                }
+            } catch (Exception e) {
+                // Ignore parsing error
+            }
+        }
+        
+        taskStatsGrid.add(createStatLabel("Tổng công việc:", String.valueOf(totalTasks)));
+        taskStatsGrid.add(createStatLabel("Đã hoàn thành:", String.valueOf(completedTasks)));
+        taskStatsGrid.add(createStatLabel("Quá hạn:", String.valueOf(overdueTasks)));
+        taskStatsGrid.add(createStatLabel("Đang thực hiện:", String.valueOf(totalTasks - completedTasks)));
+        
+        taskStatsPanel.add(taskStatsGrid, BorderLayout.CENTER);
+        
+        // Employee Statistics
+        JPanel employeeStatsPanel = new JPanel(new BorderLayout());
+        employeeStatsPanel.setBorder(BorderFactory.createTitledBorder("Thống Kê Nhân Viên"));
+        employeeStatsPanel.setBackground(Color.WHITE);
+        
+        JPanel employeeStatsGrid = new JPanel(new GridLayout(2, 2, 10, 10));
+        employeeStatsGrid.setBackground(Color.WHITE);
+        employeeStatsGrid.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        int totalEmployees = employees.size();
+        int activeEmployees = 0;
+        for (Employee emp : employees) {
+            if ("Đang làm việc".equals(emp.status)) {
+                activeEmployees++;
+            }
+        }
+        
+        employeeStatsGrid.add(createStatLabel("Tổng nhân viên:", String.valueOf(totalEmployees)));
+        employeeStatsGrid.add(createStatLabel("Đang làm việc:", String.valueOf(activeEmployees)));
+        employeeStatsGrid.add(createStatLabel("Tỷ lệ hoạt động:", totalEmployees > 0 ? 
+                                            String.format("%.1f%%", (double) activeEmployees / totalEmployees * 100) : "0%"));
+        employeeStatsGrid.add(createStatLabel("Nghỉ/Không hoạt động:", String.valueOf(totalEmployees - activeEmployees)));
+        
+        employeeStatsPanel.add(employeeStatsGrid, BorderLayout.CENTER);
+        
+        statsPanel.add(projectStatsPanel);
+        statsPanel.add(taskStatsPanel);
+        statsPanel.add(employeeStatsPanel);
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(statsPanel, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private JPanel createStatLabel(String label, String value) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        
+        JLabel labelComponent = new JLabel(label);
+        labelComponent.setFont(new Font("Arial", Font.PLAIN, 12));
+        
+        JLabel valueComponent = new JLabel(value);
+        valueComponent.setFont(new Font("Arial", Font.BOLD, 14));
+        valueComponent.setForeground(new Color(52, 152, 219));
+        
+        panel.add(labelComponent, BorderLayout.WEST);
+        panel.add(valueComponent, BorderLayout.EAST);
+        
+        return panel;
+    }
+    
+    private JPanel createSettingsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        headerPanel.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel("Cài Đặt Hệ Thống");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        // Settings content
+        JPanel settingsPanel = new JPanel();
+        settingsPanel.setLayout(new BoxLayout(settingsPanel, BoxLayout.Y_AXIS));
+        settingsPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        settingsPanel.setBackground(Color.WHITE);
+        
+        // User Settings
+        JPanel userSettingsPanel = new JPanel(new BorderLayout());
+        userSettingsPanel.setBorder(BorderFactory.createTitledBorder("Thông Tin Người Dùng"));
+        userSettingsPanel.setBackground(Color.WHITE);
+        userSettingsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
+        
+        JPanel userForm = new JPanel(new GridBagLayout());
+        userForm.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 10, 5, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        gbc.gridx = 0; gbc.gridy = 0;
+        userForm.add(new JLabel("Tên người dùng:"), gbc);
+        gbc.gridx = 1;
+        JTextField usernameField = new JTextField(currentUser, 15);
+        usernameField.setEditable(false);
+        userForm.add(usernameField, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        userForm.add(new JLabel("Vai trò:"), gbc);
+        gbc.gridx = 1;
+        JTextField roleField = new JTextField("Quản trị viên", 15);
+        roleField.setEditable(false);
+        userForm.add(roleField, gbc);
+        
+        userSettingsPanel.add(userForm, BorderLayout.CENTER);
+        
+        // System Settings
+        JPanel systemSettingsPanel = new JPanel(new BorderLayout());
+        systemSettingsPanel.setBorder(BorderFactory.createTitledBorder("Cài Đặt Hệ Thống"));
+        systemSettingsPanel.setBackground(Color.WHITE);
+        systemSettingsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+        
+        JPanel systemForm = new JPanel(new GridBagLayout());
+        systemForm.setBackground(Color.WHITE);
+        
+        gbc.gridx = 0; gbc.gridy = 0;
+        systemForm.add(new JLabel("Ngôn ngữ:"), gbc);
+        gbc.gridx = 1;
+        JComboBox<String> languageCombo = new JComboBox<>(new String[]{"Tiếng Việt", "English"});
+        systemForm.add(languageCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 1;
+        systemForm.add(new JLabel("Giao diện:"), gbc);
+        gbc.gridx = 1;
+        JComboBox<String> themeCombo = new JComboBox<>(new String[]{"Sáng", "Tối"});
+        systemForm.add(themeCombo, gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 2;
+        systemForm.add(new JLabel("Tự động lưu:"), gbc);
+        gbc.gridx = 1;
+        JCheckBox autoSaveCheck = new JCheckBox("Bật tự động lưu");
+        autoSaveCheck.setBackground(Color.WHITE);
+        autoSaveCheck.setSelected(true);
+        systemForm.add(autoSaveCheck, gbc);
+        
+        systemSettingsPanel.add(systemForm, BorderLayout.CENTER);
+        
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        
+        JButton saveSettingsBtn = new JButton("💾 Lưu Cài Đặt");
+        saveSettingsBtn.setBackground(new Color(46, 204, 113));
+        saveSettingsBtn.setForeground(Color.WHITE);
+        saveSettingsBtn.setBorder(new EmptyBorder(8, 15, 8, 15));
+        saveSettingsBtn.setFocusPainted(false);
+        saveSettingsBtn.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "Cài đặt đã được lưu thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+        });
+        
+        JButton resetBtn = new JButton("🔄 Khôi Phục Mặc Định");
+        resetBtn.setBackground(new Color(52, 152, 219));
+        resetBtn.setForeground(Color.WHITE);
+        resetBtn.setBorder(new EmptyBorder(8, 15, 8, 15));
+        resetBtn.setFocusPainted(false);
+        resetBtn.addActionListener(e -> {
+            int result = JOptionPane.showConfirmDialog(this, 
+                "Bạn có chắc chắn muốn khôi phục cài đặt mặc định?", 
+                "Xác nhận", JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.YES_OPTION) {
+                languageCombo.setSelectedIndex(0);
+                themeCombo.setSelectedIndex(0);
+                autoSaveCheck.setSelected(true);
+                JOptionPane.showMessageDialog(this, "Đã khôi phục cài đặt mặc định!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+        
+        buttonPanel.add(saveSettingsBtn);
+        buttonPanel.add(resetBtn);
+        
+        settingsPanel.add(userSettingsPanel);
+        settingsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        settingsPanel.add(systemSettingsPanel);
+        settingsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        settingsPanel.add(buttonPanel);
+        settingsPanel.add(Box.createVerticalGlue());
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(settingsPanel, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    private void refreshHomePanel() {
+        // Remove and recreate home panel to refresh statistics
+        contentPanel.remove(contentPanel.getComponent(0));
+        contentPanel.add(createHomePanel(), "HOME", 0);
+        if (contentLayout.toString().contains("HOME")) {
+            contentLayout.show(contentPanel, "HOME");
+        }
+    }
+    
+    private void setupLayout() {
+        setLayout(new BorderLayout());
+        add(sidebarPanel, BorderLayout.WEST);
+        add(contentPanel, BorderLayout.CENTER);
     }
     
     public static void main(String[] args) {
@@ -275,1575 +1170,7 @@ public class ProjectManagementSystem extends JFrame {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            new ProjectManagementSystem().setVisible(true);
+            new MainDashboard();
         });
     }
 }
-
-// Login Panel
-class LoginPanel extends JPanel {
-    private ProjectManagementSystem mainFrame;
-    private JTextField usernameField;
-    private JPasswordField passwordField;
-    
-    public LoginPanel(ProjectManagementSystem mainFrame) {
-        this.mainFrame = mainFrame;
-        initializeUI();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(new Color(240, 248, 255));
-        
-        // Header
-        JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(70, 130, 180));
-        headerPanel.setPreferredSize(new Dimension(0, 80));
-        JLabel titleLabel = new JLabel("HỆ THỐNG QUẢN LÝ DỰ ÁN", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        titleLabel.setForeground(Color.WHITE);
-        headerPanel.add(titleLabel);
-        add(headerPanel, BorderLayout.NORTH);
-        
-        // Login Form
-        JPanel centerPanel = new JPanel(new GridBagLayout());
-        centerPanel.setBackground(new Color(240, 248, 255));
-        
-        JPanel loginForm = new JPanel(new GridBagLayout());
-        loginForm.setBackground(Color.WHITE);
-        loginForm.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createRaisedBevelBorder(),
-            new EmptyBorder(30, 30, 30, 30)
-        ));
-        loginForm.setPreferredSize(new Dimension(400, 300));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        
-        // Title
-        JLabel loginTitle = new JLabel("ĐĂNG NHẬP");
-        loginTitle.setFont(new Font("Arial", Font.BOLD, 18));
-        loginTitle.setForeground(new Color(70, 130, 180));
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        loginForm.add(loginTitle, gbc);
-        
-        // Username
-        gbc.gridwidth = 1; gbc.gridy = 1;
-        loginForm.add(new JLabel("Tên đăng nhập:"), gbc);
-        gbc.gridx = 1;
-        usernameField = new JTextField(15);
-        usernameField.setText("admin"); // Default for testing
-        loginForm.add(usernameField, gbc);
-        
-        // Password
-        gbc.gridx = 0; gbc.gridy = 2;
-        loginForm.add(new JLabel("Mật khẩu:"), gbc);
-        gbc.gridx = 1;
-        passwordField = new JPasswordField(15);
-        passwordField.setText("admin"); // Default for testing
-        loginForm.add(passwordField, gbc);
-        
-        // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBackground(Color.WHITE);
-        
-        JButton loginButton = new JButton("Đăng nhập");
-        loginButton.setBackground(new Color(70, 130, 180));
-        loginButton.setForeground(Color.WHITE);
-        loginButton.setPreferredSize(new Dimension(100, 35));
-        loginButton.addActionListener(this::loginAction);
-        
-        JButton registerButton = new JButton("Đăng ký");
-        registerButton.setBackground(new Color(60, 179, 113));
-        registerButton.setForeground(Color.WHITE);
-        registerButton.setPreferredSize(new Dimension(100, 35));
-        registerButton.addActionListener(e -> mainFrame.showRegisterPanel());
-        
-        buttonPanel.add(loginButton);
-        buttonPanel.add(registerButton);
-        
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
-        loginForm.add(buttonPanel, gbc);
-        
-        centerPanel.add(loginForm);
-        add(centerPanel, BorderLayout.CENTER);
-        
-        // Sample credentials info
-        JPanel infoPanel = new JPanel();
-        infoPanel.setBackground(new Color(240, 248, 255));
-        infoPanel.add(new JLabel("Tài khoản mẫu: admin/admin (Giám đốc), manager1/123 (Trưởng phòng), employee1/123 (Nhân viên)"));
-        add(infoPanel, BorderLayout.SOUTH);
-    }
-    
-    private void loginAction(ActionEvent e) {
-        String username = usernameField.getText().trim();
-        String password = new String(passwordField.getPassword());
-        
-        if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        User user = DataManager.getInstance().authenticate(username, password);
-        if (user != null) {
-            mainFrame.showDashboard(user);
-        } else {
-            JOptionPane.showMessageDialog(this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-}
-
-// Register Panel
-class RegisterPanel extends JPanel {
-    private ProjectManagementSystem mainFrame;
-    private JTextField nameField, usernameField;
-    private JPasswordField passwordField, confirmPasswordField;
-    private JComboBox<UserRole> roleComboBox;
-    
-    public RegisterPanel(ProjectManagementSystem mainFrame) {
-        this.mainFrame = mainFrame;
-        initializeUI();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(new Color(240, 248, 255));
-        
-        // Header
-        JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(70, 130, 180));
-        headerPanel.setPreferredSize(new Dimension(0, 80));
-        JLabel titleLabel = new JLabel("ĐĂNG KÝ TÀI KHOẢN", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        titleLabel.setForeground(Color.WHITE);
-        headerPanel.add(titleLabel);
-        add(headerPanel, BorderLayout.NORTH);
-        
-        // Register Form
-        JPanel centerPanel = new JPanel(new GridBagLayout());
-        centerPanel.setBackground(new Color(240, 248, 255));
-        
-        JPanel registerForm = new JPanel(new GridBagLayout());
-        registerForm.setBackground(Color.WHITE);
-        registerForm.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createRaisedBevelBorder(),
-            new EmptyBorder(30, 30, 30, 30)
-        ));
-        registerForm.setPreferredSize(new Dimension(450, 400));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        
-        // Form fields
-        gbc.gridx = 0; gbc.gridy = 0;
-        registerForm.add(new JLabel("Họ tên:"), gbc);
-        gbc.gridx = 1;
-        nameField = new JTextField(15);
-        registerForm.add(nameField, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 1;
-        registerForm.add(new JLabel("Tên đăng nhập:"), gbc);
-        gbc.gridx = 1;
-        usernameField = new JTextField(15);
-        registerForm.add(usernameField, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 2;
-        registerForm.add(new JLabel("Mật khẩu:"), gbc);
-        gbc.gridx = 1;
-        passwordField = new JPasswordField(15);
-        registerForm.add(passwordField, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 3;
-        registerForm.add(new JLabel("Xác nhận mật khẩu:"), gbc);
-        gbc.gridx = 1;
-        confirmPasswordField = new JPasswordField(15);
-        registerForm.add(confirmPasswordField, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 4;
-        registerForm.add(new JLabel("Chức vụ:"), gbc);
-        gbc.gridx = 1;
-        roleComboBox = new JComboBox<>(UserRole.values());
-        roleComboBox.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof UserRole) {
-                    setText(((UserRole) value).getDisplayName());
-                }
-                return this;
-            }
-        });
-        registerForm.add(roleComboBox, gbc);
-        
-        // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBackground(Color.WHITE);
-        
-        JButton registerButton = new JButton("Đăng ký");
-        registerButton.setBackground(new Color(60, 179, 113));
-        registerButton.setForeground(Color.WHITE);
-        registerButton.setPreferredSize(new Dimension(100, 35));
-        registerButton.addActionListener(this::registerAction);
-        
-        JButton backButton = new JButton("Quay lại");
-        backButton.setBackground(new Color(169, 169, 169));
-        backButton.setForeground(Color.WHITE);
-        backButton.setPreferredSize(new Dimension(100, 35));
-        backButton.addActionListener(e -> mainFrame.showLoginPanel());
-        
-        buttonPanel.add(registerButton);
-        buttonPanel.add(backButton);
-        
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
-        registerForm.add(buttonPanel, gbc);
-        
-        centerPanel.add(registerForm);
-        add(centerPanel, BorderLayout.CENTER);
-    }
-    
-    private void registerAction(ActionEvent e) {
-        String name = nameField.getText().trim();
-        String username = usernameField.getText().trim();
-        String password = new String(passwordField.getPassword());
-        String confirmPassword = new String(confirmPasswordField.getPassword());
-        UserRole role = (UserRole) roleComboBox.getSelectedItem();
-        
-        if (name.isEmpty() || username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        if (!password.equals(confirmPassword)) {
-            JOptionPane.showMessageDialog(this, "Mật khẩu xác nhận không khớp!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        if (DataManager.getInstance().registerUser(name, username, password, role)) {
-            JOptionPane.showMessageDialog(this, "Đăng ký thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            mainFrame.showLoginPanel();
-        } else {
-            JOptionPane.showMessageDialog(this, "Tên đăng nhập đã tồn tại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-}
-
-// Dashboard Panel
-class DashboardPanel extends JPanel {
-    private ProjectManagementSystem mainFrame;
-    private User currentUser;
-    private JPanel contentPanel;
-    private CardLayout contentLayout;
-    
-    public DashboardPanel(ProjectManagementSystem mainFrame, User user) {
-        this.mainFrame = mainFrame;
-        this.currentUser = user;
-        initializeUI();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        
-        // Header
-        JPanel headerPanel = createHeaderPanel();
-        add(headerPanel, BorderLayout.NORTH);
-        
-        // Sidebar
-        JPanel sidebarPanel = createSidebarPanel();
-        add(sidebarPanel, BorderLayout.WEST);
-        
-        // Content
-        contentLayout = new CardLayout();
-        contentPanel = new JPanel(contentLayout);
-        contentPanel.add(new HomePanel(currentUser), "HOME");
-        contentPanel.add(new ProjectManagementPanel(currentUser), "PROJECTS");
-        contentPanel.add(new TaskManagementPanel(currentUser), "TASKS");
-        contentPanel.add(new UserManagementPanel(currentUser), "USERS");
-        contentPanel.add(new ReportPanel(currentUser), "REPORTS");
-        
-        add(contentPanel, BorderLayout.CENTER);
-        
-        // Show home by default
-        contentLayout.show(contentPanel, "HOME");
-    }
-    
-    private JPanel createHeaderPanel() {
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(70, 130, 180));
-        headerPanel.setPreferredSize(new Dimension(0, 60));
-        
-        JLabel titleLabel = new JLabel("HỆ THỐNG QUẢN LÝ DỰ ÁN");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setBorder(new EmptyBorder(0, 20, 0, 0));
-        
-        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        userPanel.setBackground(new Color(70, 130, 180));
-        
-        JLabel userLabel = new JLabel("Xin chào, " + currentUser.getName() + " (" + currentUser.getRole().getDisplayName() + ")");
-        userLabel.setForeground(Color.WHITE);
-        
-        JButton logoutButton = new JButton("Đăng xuất");
-        logoutButton.setBackground(new Color(220, 20, 60));
-        logoutButton.setForeground(Color.WHITE);
-        logoutButton.addActionListener(e -> mainFrame.logout());
-        
-        userPanel.add(userLabel);
-        userPanel.add(Box.createHorizontalStrut(20));
-        userPanel.add(logoutButton);
-        
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(userPanel, BorderLayout.EAST);
-        
-        return headerPanel;
-    }
-    
-    private JPanel createSidebarPanel() {
-        JPanel sidebarPanel = new JPanel();
-        sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
-        sidebarPanel.setBackground(new Color(248, 249, 250));
-        sidebarPanel.setPreferredSize(new Dimension(200, 0));
-        sidebarPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        String[] menuItems = {"Trang chủ", "Quản lý dự án", "Quản lý công việc", "Quản lý nhân sự", "Báo cáo"};
-        String[] cardNames = {"HOME", "PROJECTS", "TASKS", "USERS", "REPORTS"};
-        
-        for (int i = 0; i < menuItems.length; i++) {
-            JButton menuButton = createMenuButton(menuItems[i], cardNames[i]);
-            sidebarPanel.add(menuButton);
-            sidebarPanel.add(Box.createVerticalStrut(5));
-        }
-        
-        return sidebarPanel;
-    }
-    
-    private JButton createMenuButton(String text, String cardName) {
-        JButton button = new JButton(text);
-        button.setAlignmentX(Component.CENTER_ALIGNMENT);
-        button.setMaximumSize(new Dimension(180, 40));
-        button.setBackground(Color.WHITE);
-        button.setForeground(new Color(70, 130, 180));
-        button.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(70, 130, 180)),
-            new EmptyBorder(8, 15, 8, 15)
-        ));
-        button.setFocusPainted(false);
-        
-        button.addActionListener(e -> contentLayout.show(contentPanel, cardName));
-        
-        return button;
-    }
-}
-
-// Home Panel
-class HomePanel extends JPanel {
-    private User currentUser;
-    
-    public HomePanel(User user) {
-        this.currentUser = user;
-        initializeUI();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
-        
-        JPanel welcomePanel = new JPanel(new GridBagLayout());
-        welcomePanel.setBackground(Color.WHITE);
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(20, 20, 20, 20);
-        
-        JLabel welcomeLabel = new JLabel("Chào mừng đến với Hệ thống Quản lý Dự án!");
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        welcomeLabel.setForeground(new Color(70, 130, 180));
-        gbc.gridx = 0; gbc.gridy = 0;
-        welcomePanel.add(welcomeLabel, gbc);
-        
-        JLabel userInfoLabel = new JLabel("<html><center>Bạn đang đăng nhập với quyền: <b>" + 
-                                        currentUser.getRole().getDisplayName() + "</b><br>" +
-                                        "Tên: <b>" + currentUser.getName() + "</b></center></html>");
-        userInfoLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        gbc.gridy = 1;
-        welcomePanel.add(userInfoLabel, gbc);
-        
-        // Statistics Panel
-        JPanel statsPanel = createStatsPanel();
-        gbc.gridy = 2;
-        welcomePanel.add(statsPanel, gbc);
-        
-        add(welcomePanel, BorderLayout.CENTER);
-    }
-    
-    private JPanel createStatsPanel() {
-        JPanel statsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
-        statsPanel.setBorder(BorderFactory.createTitledBorder("Thống kê tổng quan"));
-        
-        DataManager dm = DataManager.getInstance();
-        
-        // Project count
-        JPanel projectCard = createStatCard("Tổng số dự án", String.valueOf(dm.getProjects().size()), new Color(70, 130, 180));
-        statsPanel.add(projectCard);
-        
-        // User count
-        JPanel userCard = createStatCard("Tổng số nhân viên", String.valueOf(dm.getUsers().size()), new Color(60, 179, 113));
-        statsPanel.add(userCard);
-        
-        // Active tasks
-        long activeTasks = dm.getProjects().stream()
-                .flatMap(p -> p.getPhases().stream())
-                .flatMap(ph -> ph.getTasks().stream())
-                .filter(t -> t.getStatus() == TaskStatus.DANG_LAM)
-                .count();
-        JPanel taskCard = createStatCard("Công việc đang thực hiện", String.valueOf(activeTasks), new Color(255, 165, 0));
-        statsPanel.add(taskCard);
-        
-        // Overdue tasks
-        long overdueTasks = dm.getProjects().stream()
-                .flatMap(p -> p.getPhases().stream())
-                .flatMap(ph -> ph.getTasks().stream())
-                .filter(t -> t.getStatus() == TaskStatus.QUA_HAN)
-                .count();
-        // Tiếp tục từ phần createStatsPanel() trong HomePanel
-        JPanel overdueCard = createStatCard("Công việc quá hạn", String.valueOf(overdueTasks), new Color(220, 20, 60));
-        statsPanel.add(overdueCard);
-        
-        return statsPanel;
-    }
-    
-    private JPanel createStatCard(String title, String value, Color color) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(color);
-        card.setBorder(new EmptyBorder(15, 15, 15, 15));
-        card.setPreferredSize(new Dimension(150, 80));
-        
-        JLabel titleLabel = new JLabel(title, SwingConstants.CENTER);
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        
-        JLabel valueLabel = new JLabel(value, SwingConstants.CENTER);
-        valueLabel.setForeground(Color.WHITE);
-        valueLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        
-        card.add(titleLabel, BorderLayout.NORTH);
-        card.add(valueLabel, BorderLayout.CENTER);
-        
-        return card;
-    }
-}
-
-// Project Management Panel
-class ProjectManagementPanel extends JPanel {
-    private User currentUser;
-    private JTable projectTable;
-    private DefaultTableModel tableModel;
-    
-    public ProjectManagementPanel(User user) {
-        this.currentUser = user;
-        initializeUI();
-        loadProjects();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
-        
-        // Header
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        headerPanel.setBackground(Color.WHITE);
-        headerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        JLabel titleLabel = new JLabel("Quản lý Dự án");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(70, 130, 180));
-        headerPanel.add(titleLabel);
-        
-        if (currentUser.getRole() == UserRole.GIAM_DOC || currentUser.getRole() == UserRole.TRUONG_PHONG) {
-            JButton addButton = new JButton("Thêm dự án mới");
-            addButton.setBackground(new Color(60, 179, 113));
-            addButton.setForeground(Color.WHITE);
-            addButton.addActionListener(this::addProject);
-            headerPanel.add(Box.createHorizontalStrut(20));
-            headerPanel.add(addButton);
-        }
-        
-        add(headerPanel, BorderLayout.NORTH);
-        
-        // Table
-        String[] columns = {"ID", "Tên dự án", "Mô tả", "Ngày bắt đầu", "Ngày kết thúc", "Người quản lý"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        
-        projectTable = new JTable(tableModel);
-        projectTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        projectTable.getTableHeader().setBackground(new Color(70, 130, 180));
-        projectTable.getTableHeader().setForeground(Color.WHITE);
-        
-        JScrollPane scrollPane = new JScrollPane(projectTable);
-        add(scrollPane, BorderLayout.CENTER);
-        
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBackground(Color.WHITE);
-        
-        JButton viewButton = new JButton("Xem chi tiết");
-        viewButton.addActionListener(this::viewProject);
-        buttonPanel.add(viewButton);
-        
-        if (currentUser.getRole() == UserRole.GIAM_DOC || currentUser.getRole() == UserRole.TRUONG_PHONG) {
-            JButton editButton = new JButton("Chỉnh sửa");
-            editButton.addActionListener(this::editProject);
-            buttonPanel.add(editButton);
-            
-            JButton deleteButton = new JButton("Xóa");
-            deleteButton.setBackground(new Color(220, 20, 60));
-            deleteButton.setForeground(Color.WHITE);
-            deleteButton.addActionListener(this::deleteProject);
-            buttonPanel.add(deleteButton);
-        }
-        
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
-    
-    private void loadProjects() {
-        tableModel.setRowCount(0);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        
-        for (Project project : DataManager.getInstance().getProjects()) {
-            User manager = DataManager.getInstance().getUsers().stream()
-                    .filter(u -> u.getId().equals(project.getManagerId()))
-                    .findFirst().orElse(null);
-            
-            Object[] row = {
-                project.getId(),
-                project.getName(),
-                project.getDescription(),
-                project.getStartDate().format(formatter),
-                project.getEndDate().format(formatter),
-                manager != null ? manager.getName() : "Chưa phân công"
-            };
-            tableModel.addRow(row);
-        }
-    }
-    
-    private void addProject(ActionEvent e) {
-        ProjectDialog dialog = new ProjectDialog(null, "Thêm dự án mới", null);
-        dialog.setVisible(true);
-        if (dialog.isConfirmed()) {
-            loadProjects();
-        }
-    }
-    
-    private void editProject(ActionEvent e) {
-        int selectedRow = projectTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            String projectId = (String) tableModel.getValueAt(selectedRow, 0);
-            Project project = DataManager.getInstance().getProjects().stream()
-                    .filter(p -> p.getId().equals(projectId))
-                    .findFirst().orElse(null);
-            
-            if (project != null) {
-                ProjectDialog dialog = new ProjectDialog(null, "Chỉnh sửa dự án", project);
-                dialog.setVisible(true);
-                if (dialog.isConfirmed()) {
-                    loadProjects();
-                }
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn dự án cần chỉnh sửa!");
-        }
-    }
-    
-    private void deleteProject(ActionEvent e) {
-        int selectedRow = projectTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            int result = JOptionPane.showConfirmDialog(this, 
-                "Bạn có chắc chắn muốn xóa dự án này?", 
-                "Xác nhận xóa", 
-                JOptionPane.YES_NO_OPTION);
-            
-            if (result == JOptionPane.YES_OPTION) {
-                String projectId = (String) tableModel.getValueAt(selectedRow, 0);
-                DataManager.getInstance().getProjects().removeIf(p -> p.getId().equals(projectId));
-                loadProjects();
-                JOptionPane.showMessageDialog(this, "Đã xóa dự án thành công!");
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn dự án cần xóa!");
-        }
-    }
-    
-    private void viewProject(ActionEvent e) {
-        int selectedRow = projectTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            String projectId = (String) tableModel.getValueAt(selectedRow, 0);
-            Project project = DataManager.getInstance().getProjects().stream()
-                    .filter(p -> p.getId().equals(projectId))
-                    .findFirst().orElse(null);
-            
-            if (project != null) {
-                ProjectDetailDialog dialog = new ProjectDetailDialog(null, project);
-                dialog.setVisible(true);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn dự án cần xem!");
-        }
-    }
-}
-
-// Project Dialog
-class ProjectDialog extends JDialog {
-    private JTextField nameField, descriptionField;
-    private JTextField startDateField, endDateField;
-    private JComboBox<User> managerComboBox;
-    private boolean confirmed = false;
-    private Project project;
-    
-    public ProjectDialog(Frame parent, String title, Project project) {
-        super(parent, title, true);
-        this.project = project;
-        initializeUI();
-        if (project != null) {
-            populateFields();
-        }
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setSize(500, 400);
-        setLocationRelativeTo(getParent());
-        
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.anchor = GridBagConstraints.WEST;
-        
-        // Name
-        gbc.gridx = 0; gbc.gridy = 0;
-        formPanel.add(new JLabel("Tên dự án:"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        nameField = new JTextField(20);
-        formPanel.add(nameField, gbc);
-        
-        // Description
-        gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Mô tả:"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        descriptionField = new JTextField(20);
-        formPanel.add(descriptionField, gbc);
-        
-        // Start Date
-        gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Ngày bắt đầu (dd/MM/yyyy):"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        startDateField = new JTextField(20);
-        formPanel.add(startDateField, gbc);
-        
-        // End Date
-        gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Ngày kết thúc (dd/MM/yyyy):"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        endDateField = new JTextField(20);
-        formPanel.add(endDateField, gbc);
-        
-        // Manager
-        gbc.gridx = 0; gbc.gridy = 4; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Người quản lý:"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        
-        List<User> managers = DataManager.getInstance().getUsersByRole(UserRole.TRUONG_PHONG);
-        managers.addAll(DataManager.getInstance().getUsersByRole(UserRole.GIAM_DOC));
-        managerComboBox = new JComboBox<>(managers.toArray(new User[0]));
-        managerComboBox.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof User) {
-                    setText(((User) value).getName() + " (" + ((User) value).getRole().getDisplayName() + ")");
-                }
-                return this;
-            }
-        });
-        formPanel.add(managerComboBox, gbc);
-        
-        add(formPanel, BorderLayout.CENTER);
-        
-        // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton saveButton = new JButton("Lưu");
-        saveButton.setBackground(new Color(60, 179, 113));
-        saveButton.setForeground(Color.WHITE);
-        saveButton.addActionListener(this::saveProject);
-        
-        JButton cancelButton = new JButton("Hủy");
-        cancelButton.addActionListener(e -> dispose());
-        
-        buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
-    
-    private void populateFields() {
-        nameField.setText(project.getName());
-        descriptionField.setText(project.getDescription());
-        
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        startDateField.setText(project.getStartDate().format(formatter));
-        endDateField.setText(project.getEndDate().format(formatter));
-        
-        // Set manager
-        if (project.getManagerId() != null) {
-            User manager = DataManager.getInstance().getUsers().stream()
-                    .filter(u -> u.getId().equals(project.getManagerId()))
-                    .findFirst().orElse(null);
-            if (manager != null) {
-                managerComboBox.setSelectedItem(manager);
-            }
-        }
-    }
-    
-    private void saveProject(ActionEvent e) {
-        try {
-            String name = nameField.getText().trim();
-            String description = descriptionField.getText().trim();
-            
-            if (name.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập tên dự án!");
-                return;
-            }
-            
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDateTime startDate = LocalDateTime.parse(startDateField.getText().trim() + " 00:00", 
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-            LocalDateTime endDate = LocalDateTime.parse(endDateField.getText().trim() + " 23:59", 
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-            
-            User selectedManager = (User) managerComboBox.getSelectedItem();
-            
-            if (project == null) {
-                // Add new project
-                String newId = "P" + (DataManager.getInstance().getProjects().size() + 1);
-                Project newProject = new Project(newId, name, description, startDate, endDate);
-                if (selectedManager != null) {
-                    newProject.setManagerId(selectedManager.getId());
-                }
-                DataManager.getInstance().addProject(newProject);
-            } else {
-                // Update existing project - In a real application, you'd have setters for these fields
-                JOptionPane.showMessageDialog(this, "Chức năng chỉnh sửa sẽ được cập nhật trong phiên bản sau!");
-            }
-            
-            confirmed = true;
-            dispose();
-            
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Định dạng ngày không hợp lệ! Vui lòng sử dụng định dạng dd/MM/yyyy");
-        }
-    }
-    
-    public boolean isConfirmed() {
-        return confirmed;
-    }
-}
-
-// Project Detail Dialog
-class ProjectDetailDialog extends JDialog {
-    private Project project;
-    
-    public ProjectDetailDialog(Frame parent, Project project) {
-        super(parent, "Chi tiết dự án: " + project.getName(), true);
-        this.project = project;
-        initializeUI();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setSize(600, 500);
-        setLocationRelativeTo(getParent());
-        
-        JTabbedPane tabbedPane = new JTabbedPane();
-        
-        // Project Info Tab
-        JPanel infoPanel = createProjectInfoPanel();
-        tabbedPane.addTab("Thông tin dự án", infoPanel);
-        
-        // Phases Tab
-        JPanel phasesPanel = createPhasesPanel();
-        tabbedPane.addTab("Các giai đoạn", phasesPanel);
-        
-        add(tabbedPane, BorderLayout.CENTER);
-        
-        // Close button
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton closeButton = new JButton("Đóng");
-        closeButton.addActionListener(e -> dispose());
-        buttonPanel.add(closeButton);
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
-    
-    private JPanel createProjectInfoPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.anchor = GridBagConstraints.WEST;
-        
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        
-        // Project details
-        gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("ID:"), gbc);
-        gbc.gridx = 1;
-        panel.add(new JLabel(project.getId()), gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Tên dự án:"), gbc);
-        gbc.gridx = 1;
-        panel.add(new JLabel(project.getName()), gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Mô tả:"), gbc);
-        gbc.gridx = 1;
-        JTextArea descArea = new JTextArea(project.getDescription());
-        descArea.setEditable(false);
-        descArea.setBackground(panel.getBackground());
-        panel.add(descArea, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 3;
-        panel.add(new JLabel("Ngày bắt đầu:"), gbc);
-        gbc.gridx = 1;
-        panel.add(new JLabel(project.getStartDate().format(formatter)), gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 4;
-        panel.add(new JLabel("Ngày kết thúc:"), gbc);
-        gbc.gridx = 1;
-        panel.add(new JLabel(project.getEndDate().format(formatter)), gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 5;
-        panel.add(new JLabel("Người quản lý:"), gbc);
-        gbc.gridx = 1;
-        User manager = DataManager.getInstance().getUsers().stream()
-                .filter(u -> u.getId().equals(project.getManagerId()))
-                .findFirst().orElse(null);
-        panel.add(new JLabel(manager != null ? manager.getName() : "Chưa phân công"), gbc);
-        
-        return panel;
-    }
-    
-    private JPanel createPhasesPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        
-        if (project.getPhases().isEmpty()) {
-            JLabel noDataLabel = new JLabel("Chưa có giai đoạn nào được tạo", SwingConstants.CENTER);
-            panel.add(noDataLabel, BorderLayout.CENTER);
-        } else {
-            String[] columns = {"ID", "Tên giai đoạn", "Ngày bắt đầu", "Ngày kết thúc", "Số công việc"};
-            DefaultTableModel model = new DefaultTableModel(columns, 0);
-            
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            for (Phase phase : project.getPhases()) {
-                Object[] row = {
-                    phase.getId(),
-                    phase.getName(),
-                    phase.getStartDate().format(formatter),
-                    phase.getEndDate().format(formatter),
-                    phase.getTasks().size()
-                };
-                model.addRow(row);
-            }
-            
-            JTable table = new JTable(model);
-            table.getTableHeader().setBackground(new Color(70, 130, 180));
-            table.getTableHeader().setForeground(Color.WHITE);
-            
-            JScrollPane scrollPane = new JScrollPane(table);
-            panel.add(scrollPane, BorderLayout.CENTER);
-        }
-        
-        return panel;
-    }
-}
-
-// Task Management Panel
-class TaskManagementPanel extends JPanel {
-    private User currentUser;
-    private JTable taskTable;
-    private DefaultTableModel tableModel;
-    
-    public TaskManagementPanel(User user) {
-        this.currentUser = user;
-        initializeUI();
-        loadTasks();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
-        
-        // Header
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        headerPanel.setBackground(Color.WHITE);
-        headerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        JLabel titleLabel = new JLabel("Quản lý Công việc");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(70, 130, 180));
-        headerPanel.add(titleLabel);
-        
-        add(headerPanel, BorderLayout.NORTH);
-        
-        // Table
-        String[] columns = {"ID", "Tên công việc", "Mô tả", "Người thực hiện", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        
-        taskTable = new JTable(tableModel);
-        taskTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        taskTable.getTableHeader().setBackground(new Color(70, 130, 180));
-        taskTable.getTableHeader().setForeground(Color.WHITE);
-        
-        JScrollPane scrollPane = new JScrollPane(taskTable);
-        add(scrollPane, BorderLayout.CENTER);
-        
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBackground(Color.WHITE);
-        
-        JButton updateStatusButton = new JButton("Cập nhật trạng thái");
-        updateStatusButton.addActionListener(this::updateTaskStatus);
-        buttonPanel.add(updateStatusButton);
-        
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
-    
-    private void loadTasks() {
-        tableModel.setRowCount(0);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        
-        for (Project project : DataManager.getInstance().getProjects()) {
-            for (Phase phase : project.getPhases()) {
-                for (Task task : phase.getTasks()) {
-                    // Filter tasks based on user role
-                    if (currentUser.getRole() == UserRole.NHAN_VIEN && 
-                        !currentUser.getId().equals(task.getAssignedTo())) {
-                        continue; // Skip tasks not assigned to current employee
-                    }
-                    
-                    User assignee = DataManager.getInstance().getUsers().stream()
-                            .filter(u -> u.getId().equals(task.getAssignedTo()))
-                            .findFirst().orElse(null);
-                    
-                    Object[] row = {
-                        task.getId(),
-                        task.getName(),
-                        task.getDescription(),
-                        assignee != null ? assignee.getName() : "Chưa phân công",
-                        task.getStartDate().format(formatter),
-                        task.getEndDate().format(formatter),
-                        task.getStatus().getDisplayName()
-                    };
-                    tableModel.addRow(row);
-                }
-            }
-        }
-    }
-    
-    private void updateTaskStatus(ActionEvent e) {
-        int selectedRow = taskTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            String taskId = (String) tableModel.getValueAt(selectedRow, 0);
-            
-            // Find the task
-            Task task = null;
-            for (Project project : DataManager.getInstance().getProjects()) {
-                for (Phase phase : project.getPhases()) {
-                    for (Task t : phase.getTasks()) {
-                        if (t.getId().equals(taskId)) {
-                            task = t;
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            if (task != null) {
-                TaskStatus[] statuses = TaskStatus.values();
-                TaskStatus selectedStatus = (TaskStatus) JOptionPane.showInputDialog(
-                    this,
-                    "Chọn trạng thái mới:",
-                    "Cập nhật trạng thái",
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    statuses,
-                    task.getStatus()
-                );
-                
-                if (selectedStatus != null) {
-                    task.setStatus(selectedStatus);
-                    loadTasks();
-                    JOptionPane.showMessageDialog(this, "Đã cập nhật trạng thái thành công!");
-                }
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn công việc cần cập nhật!");
-        }
-    }
-}
-
-// User Management Panel
-class UserManagementPanel extends JPanel {
-    private User currentUser;
-    private JTable userTable;
-    private DefaultTableModel tableModel;
-    
-    public UserManagementPanel(User user) {
-        this.currentUser = user;
-        initializeUI();
-        loadUsers();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
-        
-        // Header
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        headerPanel.setBackground(Color.WHITE);
-        headerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        JLabel titleLabel = new JLabel("Quản lý Nhân sự");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(70, 130, 180));
-        headerPanel.add(titleLabel);
-        
-        add(headerPanel, BorderLayout.NORTH);
-        
-        // Table
-        String[] columns = {"ID", "Họ tên", "Tên đăng nhập", "Chức vụ"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        
-        userTable = new JTable(tableModel);
-        userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        userTable.getTableHeader().setBackground(new Color(70, 130, 180));
-        userTable.getTableHeader().setForeground(Color.WHITE);
-        
-        JScrollPane scrollPane = new JScrollPane(userTable);
-        add(scrollPane, BorderLayout.CENTER);
-    }
-    
-    private void loadUsers() {
-        tableModel.setRowCount(0);
-        
-        for (User user : DataManager.getInstance().getUsers()) {
-            Object[] row = {
-                user.getId(),
-                user.getName(),
-                user.getUsername(),
-                user.getRole().getDisplayName()
-            };
-            tableModel.addRow(row);
-        }
-    }
-}
-
-// Report Panel
-class ReportPanel extends JPanel {
-    private User currentUser;
-    
-    public ReportPanel(User user) {
-        this.currentUser = user;
-        initializeUI();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
-        
-        // Header
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        headerPanel.setBackground(Color.WHITE);
-        headerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        JLabel titleLabel = new JLabel("Báo cáo & Thống kê");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(70, 130, 180));
-        headerPanel.add(titleLabel);
-        
-        add(headerPanel, BorderLayout.NORTH);
-        
-        // Report content
-        JPanel contentPanel = new JPanel(new GridLayout(2, 2, 20, 20));
-        contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        // Project Statistics
-        JPanel projectStats = createProjectStatsPanel();
-        contentPanel.add(projectStats);
-        
-        // Task Statistics
-        JPanel taskStats = createTaskStatsPanel();
-        contentPanel.add(taskStats);
-        
-        // User Statistics
-        JPanel userStats = createUserStatsPanel();
-        contentPanel.add(userStats);
-        
-        // Performance Panel
-        JPanel performancePanel = createPerformancePanel();
-        contentPanel.add(performancePanel);
-        
-        add(contentPanel, BorderLayout.CENTER);
-    }
-    
-    private JPanel createProjectStatsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Thống kê Dự án"));
-        panel.setBackground(Color.WHITE);
-        
-        JTextArea textArea = new JTextArea();
-        textArea.setEditable(false);
-        textArea.setBackground(Color.WHITE);
-        
-        DataManager dm = DataManager.getInstance();
-        StringBuilder sb = new StringBuilder();
-        sb.append("Tổng số dự án: ").append(dm.getProjects().size()).append("\n");
-        
-        long activeProjects = dm.getProjects().stream()
-                .filter(p -> p.getEndDate().isAfter(LocalDateTime.now()))
-                .count();
-        sb.append("Dự án đang hoạt động: ").append(activeProjects).append("\n");
-        
-        long completedProjects = dm.getProjects().size() - activeProjects;
-        // Continuing from the ReportPanel createProjectStatsPanel method
-        sb.append("Dự án đã hoàn thành: ").append(completedProjects).append("\n");
-        
-        textArea.setText(sb.toString());
-        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    private JPanel createTaskStatsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Thống kê Công việc"));
-        panel.setBackground(Color.WHITE);
-        
-        JTextArea textArea = new JTextArea();
-        textArea.setEditable(false);
-        textArea.setBackground(Color.WHITE);
-        
-        DataManager dm = DataManager.getInstance();
-        List<Task> allTasks = dm.getProjects().stream()
-                .flatMap(p -> p.getPhases().stream())
-                .flatMap(ph -> ph.getTasks().stream())
-                .toList();
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append("Tổng số công việc: ").append(allTasks.size()).append("\n");
-        
-        long notStarted = allTasks.stream()
-                .filter(t -> t.getStatus() == TaskStatus.CHUA_BAT_DAU)
-                .count();
-        sb.append("Chưa bắt đầu: ").append(notStarted).append("\n");
-        
-        long inProgress = allTasks.stream()
-                .filter(t -> t.getStatus() == TaskStatus.DANG_LAM)
-                .count();
-        sb.append("Đang thực hiện: ").append(inProgress).append("\n");
-        
-        long completed = allTasks.stream()
-                .filter(t -> t.getStatus() == TaskStatus.HOAN_THANH)
-                .count();
-        sb.append("Đã hoàn thành: ").append(completed).append("\n");
-        
-        long overdue = allTasks.stream()
-                .filter(t -> t.getStatus() == TaskStatus.QUA_HAN)
-                .count();
-        sb.append("Quá hạn: ").append(overdue).append("\n");
-        
-        if (allTasks.size() > 0) {
-            double completionRate = (double) completed / allTasks.size() * 100;
-            sb.append("Tỷ lệ hoàn thành: ").append(String.format("%.1f%%", completionRate));
-        }
-        
-        textArea.setText(sb.toString());
-        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    private JPanel createUserStatsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Thống kê Nhân sự"));
-        panel.setBackground(Color.WHITE);
-        
-        JTextArea textArea = new JTextArea();
-        textArea.setEditable(false);
-        textArea.setBackground(Color.WHITE);
-        
-        DataManager dm = DataManager.getInstance();
-        StringBuilder sb = new StringBuilder();
-        sb.append("Tổng số nhân viên: ").append(dm.getUsers().size()).append("\n");
-        
-        for (UserRole role : UserRole.values()) {
-            long count = dm.getUsers().stream()
-                    .filter(u -> u.getRole() == role)
-                    .count();
-            sb.append(role.getDisplayName()).append(": ").append(count).append("\n");
-        }
-        
-        textArea.setText(sb.toString());
-        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    private JPanel createPerformancePanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Hiệu suất làm việc"));
-        panel.setBackground(Color.WHITE);
-        
-        JTextArea textArea = new JTextArea();
-        textArea.setEditable(false);
-        textArea.setBackground(Color.WHITE);
-        
-        DataManager dm = DataManager.getInstance();
-        StringBuilder sb = new StringBuilder();
-        
-        // Calculate task assignment distribution
-        Map<String, Long> taskAssignments = dm.getProjects().stream()
-                .flatMap(p -> p.getPhases().stream())
-                .flatMap(ph -> ph.getTasks().stream())
-                .filter(t -> t.getAssignedTo() != null)
-                .collect(Collectors.groupingBy(Task::getAssignedTo, Collectors.counting()));
-        
-        sb.append("Phân bổ công việc theo nhân viên:\n");
-        for (Map.Entry<String, Long> entry : taskAssignments.entrySet()) {
-            User user = dm.getUsers().stream()
-                    .filter(u -> u.getId().equals(entry.getKey()))
-                    .findFirst().orElse(null);
-            if (user != null) {
-                sb.append("- ").append(user.getName()).append(": ")
-                  .append(entry.getValue()).append(" công việc\n");
-            }
-        }
-        
-        // Calculate completion rate by user
-        sb.append("\nTỷ lệ hoàn thành theo nhân viên:\n");
-        for (Map.Entry<String, Long> entry : taskAssignments.entrySet()) {
-            User user = dm.getUsers().stream()
-                    .filter(u -> u.getId().equals(entry.getKey()))
-                    .findFirst().orElse(null);
-            if (user != null) {
-                long completedTasks = dm.getProjects().stream()
-                        .flatMap(p -> p.getPhases().stream())
-                        .flatMap(ph -> ph.getTasks().stream())
-                        .filter(t -> t.getAssignedTo() != null && 
-                                   t.getAssignedTo().equals(entry.getKey()) &&
-                                   t.getStatus() == TaskStatus.HOAN_THANH)
-                        .count();
-                
-                double completionRate = entry.getValue() > 0 ? 
-                        (double) completedTasks / entry.getValue() * 100 : 0;
-                sb.append("- ").append(user.getName()).append(": ")
-                  .append(String.format("%.1f%%", completionRate)).append("\n");
-            }
-        }
-        
-        textArea.setText(sb.toString());
-        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
-        
-        return panel;
-    }
-}
-
-// Additional utility classes and methods
-
-// Task Assignment Dialog (for future enhancement)
-class TaskAssignmentDialog extends JDialog {
-    private Task task;
-    private JComboBox<User> employeeComboBox;
-    private boolean confirmed = false;
-    
-    public TaskAssignmentDialog(Frame parent, Task task) {
-        super(parent, "Phân công công việc", true);
-        this.task = task;
-        initializeUI();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setSize(400, 200);
-        setLocationRelativeTo(getParent());
-        
-        JPanel contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        
-        gbc.gridx = 0; gbc.gridy = 0;
-        contentPanel.add(new JLabel("Công việc:"), gbc);
-        gbc.gridx = 1;
-        contentPanel.add(new JLabel(task.getName()), gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 1;
-        contentPanel.add(new JLabel("Phân công cho:"), gbc);
-        gbc.gridx = 1;
-        
-        List<User> employees = DataManager.getInstance().getUsersByRole(UserRole.NHAN_VIEN);
-        employees.addAll(DataManager.getInstance().getUsersByRole(UserRole.PHO_PHONG));
-        
-        employeeComboBox = new JComboBox<>(employees.toArray(new User[0]));
-        employeeComboBox.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, 
-                    int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof User) {
-                    User user = (User) value;
-                    setText(user.getName() + " (" + user.getRole().getDisplayName() + ")");
-                }
-                return this;
-            }
-        });
-        contentPanel.add(employeeComboBox, gbc);
-        
-        add(contentPanel, BorderLayout.CENTER);
-        
-        // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton assignButton = new JButton("Phân công");
-        assignButton.setBackground(new Color(60, 179, 113));
-        assignButton.setForeground(Color.WHITE);
-        assignButton.addActionListener(e -> {
-            User selectedUser = (User) employeeComboBox.getSelectedItem();
-            if (selectedUser != null) {
-                task.setAssignedTo(selectedUser.getId());
-                confirmed = true;
-                dispose();
-            }
-        });
-        
-        JButton cancelButton = new JButton("Hủy");
-        cancelButton.addActionListener(e -> dispose());
-        
-        buttonPanel.add(assignButton);
-        buttonPanel.add(cancelButton);
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
-    
-    public boolean isConfirmed() {
-        return confirmed;
-    }
-}
-
-// Phase Management Dialog (for future enhancement)
-class PhaseDialog extends JDialog {
-    private Project project;
-    private JTextField nameField;
-    private JTextField startDateField, endDateField;
-    private boolean confirmed = false;
-    
-    public PhaseDialog(Frame parent, Project project) {
-        super(parent, "Thêm giai đoạn mới", true);
-        this.project = project;
-        initializeUI();
-    }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        setSize(400, 300);
-        setLocationRelativeTo(getParent());
-        
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.anchor = GridBagConstraints.WEST;
-        
-        // Phase name
-        gbc.gridx = 0; gbc.gridy = 0;
-        formPanel.add(new JLabel("Tên giai đoạn:"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        nameField = new JTextField(20);
-        formPanel.add(nameField, gbc);
-        
-        // Start date
-        gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Ngày bắt đầu (dd/MM/yyyy):"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        startDateField = new JTextField(20);
-        formPanel.add(startDateField, gbc);
-        
-        // End date
-        gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Ngày kết thúc (dd/MM/yyyy):"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        endDateField = new JTextField(20);
-        formPanel.add(endDateField, gbc);
-        
-        add(formPanel, BorderLayout.CENTER);
-        
-        // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton saveButton = new JButton("Lưu");
-        saveButton.setBackground(new Color(60, 179, 113));
-        saveButton.setForeground(Color.WHITE);
-        saveButton.addActionListener(this::savePhase);
-        
-        JButton cancelButton = new JButton("Hủy");
-        cancelButton.addActionListener(e -> dispose());
-        
-        buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
-    
-    private void savePhase(ActionEvent e) {
-        try {
-            String name = nameField.getText().trim();
-            if (name.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập tên giai đoạn!");
-                return;
-            }
-            
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDateTime startDate = LocalDateTime.parse(startDateField.getText().trim() + " 00:00", 
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-            LocalDateTime endDate = LocalDateTime.parse(endDateField.getText().trim() + " 23:59", 
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-            
-            if (endDate.isBefore(startDate)) {
-                JOptionPane.showMessageDialog(this, "Ngày kết thúc phải sau ngày bắt đầu!");
-                return;
-            }
-            
-            String newId = "PH" + (project.getPhases().size() + 1);
-            Phase newPhase = new Phase(newId, name, startDate, endDate);
-            project.getPhases().add(newPhase);
-            
-            confirmed = true;
-            dispose();
-            
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Định dạng ngày không hợp lệ! Vui lòng sử dụng định dạng dd/MM/yyyy");
-        }
-    }
-    
-    public boolean isConfirmed() {
-        return confirmed;
-    }
-}
-
-// Notification System (for future enhancement)
-class NotificationManager {
-    private static NotificationManager instance = new NotificationManager();
-    private List<Notification> notifications = new ArrayList<>();
-    
-    private NotificationManager() {}
-    
-    public static NotificationManager getInstance() {
-        return instance;
-    }
-    
-    public void addNotification(String title, String message, User recipient) {
-        notifications.add(new Notification(title, message, recipient.getId(), LocalDateTime.now()));
-    }
-    
-    public List<Notification> getNotificationsForUser(String userId) {
-        return notifications.stream()
-                .filter(n -> n.getRecipientId().equals(userId))
-                .filter(n -> !n.isRead())
-                .sorted((n1, n2) -> n2.getCreatedAt().compareTo(n1.getCreatedAt()))
-                .toList();
-    }
-    
-    public void markAsRead(String notificationId) {
-        notifications.stream()
-                .filter(n -> n.getId().equals(notificationId))
-                .findFirst()
-                .ifPresent(n -> n.setRead(true));
-    }
-}
-
-class Notification {
-    private String id;
-    private String title;
-    private String message;
-    private String recipientId;
-    private LocalDateTime createdAt;
-    private boolean read;
-    
-    public Notification(String title, String message, String recipientId, LocalDateTime createdAt) {
-        this.id = UUID.randomUUID().toString();
-        this.title = title;
-        this.message = message;
-        this.recipientId = recipientId;
-        this.createdAt = createdAt;
-        this.read = false;
-    }
-    
-    // Getters and setters
-    public String getId() { return id; }
-    public String getTitle() { return title; }
-    public String getMessage() { return message; }
-    public String getRecipientId() { return recipientId; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public boolean isRead() { return read; }
-    public void setRead(boolean read) { this.read = read; }
-}
-
-// File export utilities (for future enhancement)
-class ReportExporter {
-    public static void exportProjectReport(List<Project> projects, String filePath) {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
-            writer.println("BÁO CÁO DỰ ÁN");
-            writer.println("================");
-            writer.println("Ngày xuất: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-            writer.println();
-            
-            for (Project project : projects) {
-                writer.println("Dự án: " + project.getName());
-                writer.println("ID: " + project.getId());
-                writer.println("Mô tả: " + project.getDescription());
-                writer.println("Ngày bắt đầu: " + project.getStartDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-                writer.println("Ngày kết thúc: " + project.getEndDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-                writer.println("Số giai đoạn: " + project.getPhases().size());
-                
-                int totalTasks = project.getPhases().stream()
-                        .mapToInt(p -> p.getTasks().size())
-                        .sum();
-                writer.println("Tổng số công việc: " + totalTasks);
-                writer.println("---");
-            }
-            
-            JOptionPane.showMessageDialog(null, "Đã xuất báo cáo thành công: " + filePath);
-            
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Lỗi khi xuất báo cáo: " + e.getMessage());
-        }
-    }
-}
-
-// Main application entry point (already defined above, but included for completeness)
-/*
-public class ProjectManagementSystem extends JFrame {
-    // Main method and application logic already implemented above
-}
-*/
