@@ -477,6 +477,7 @@ public class MainDashboard extends JFrame {
     private CardLayout contentLayout;
     private JLabel userLabel;
     private String currentUser = "Admin";
+    private String currentRole;
     
     // Data storage
     private ArrayList<Project> projects = new ArrayList<>();
@@ -493,7 +494,9 @@ public class MainDashboard extends JFrame {
     private int taskIdCounter = 1;
     private int employeeIdCounter = 1;
     
-    public MainDashboard() {
+    public MainDashboard(String fullName, String role) {
+        this.currentUser = fullName;
+        this.currentRole = role;
         initializeComponents();
         setupLayout();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -576,12 +579,14 @@ public class MainDashboard extends JFrame {
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
                 button.setBackground(new Color(41, 128, 185));
+                button.setForeground(Color.WHITE);
             }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
+            public void mouseExited(MouseEvent evt) {
                 button.setBackground(new Color(52, 73, 94));
+                button.setForeground(Color.WHITE);
             }
         });
         
@@ -598,9 +603,11 @@ public class MainDashboard extends JFrame {
         for (Component comp : sidebarPanel.getComponents()) {
             if (comp instanceof JButton && !comp.equals(sidebarPanel.getComponent(sidebarPanel.getComponentCount()-2))) {
                 comp.setBackground(new Color(52, 73, 94));
+                ((JButton) comp).setForeground(Color.WHITE);
             }
         }
         selectedButton.setBackground(new Color(41, 128, 185));
+        selectedButton.setForeground(Color.WHITE);
     }
     
     private void createContentPanel() {
@@ -1568,11 +1575,11 @@ public class MainDashboard extends JFrame {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeel());
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            new MainDashboard();
+            new LoginFrame();;
         });
     }
 }
